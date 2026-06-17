@@ -23,7 +23,6 @@ const form = reactive<JobPostCreateInput>({
   city: '',
   salaryRange: '',
   sourcePlatform: 'Boss直聘',
-  jobUrl: '',
   jdText: '',
   statusId: '',
   notes: '',
@@ -46,7 +45,6 @@ function clean(input: JobPostCreateInput): JobPostCreateInput {
     city: input.city?.trim() || undefined,
     salaryRange: input.salaryRange?.trim() || undefined,
     sourcePlatform: input.sourcePlatform?.trim() || undefined,
-    jobUrl: input.jobUrl?.trim() || undefined,
     jdText: input.jdText.trim(),
     statusId: input.statusId || undefined,
     notes: input.notes?.trim() || undefined,
@@ -60,7 +58,6 @@ function resetForm() {
   form.city = ''
   form.salaryRange = ''
   form.sourcePlatform = 'Boss直聘'
-  form.jobUrl = ''
   form.jdText = ''
   form.statusId = ''
   form.notes = ''
@@ -113,7 +110,6 @@ function applyParsedJob(parsed: JobPostParsed) {
   fillIfBlank('city', parsed.city)
   fillIfBlank('salaryRange', parsed.salaryRange)
   fillIfBlank('sourcePlatform', parsed.sourcePlatform)
-  fillIfBlank('jobUrl', parsed.jobUrl)
   fillIfBlank('notes', parsed.notes)
 }
 
@@ -155,7 +151,6 @@ function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
           <label>城市<BaseInput v-model="form.city" placeholder="城市" /></label>
           <label>薪资<BaseInput v-model="form.salaryRange" placeholder="20-30K" /></label>
         </div>
-        <label>链接<BaseInput v-model="form.jobUrl" placeholder="Boss直聘链接" /></label>
         <label>
           状态
           <select v-model="form.statusId">

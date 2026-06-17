@@ -29,7 +29,6 @@ const form = reactive<JobPostUpdateInput>({
   city: '',
   salaryRange: '',
   sourcePlatform: '',
-  jobUrl: '',
   jdText: '',
   statusId: null,
   notes: '',
@@ -67,7 +66,6 @@ function fillForm(next: JobPost) {
   form.city = next.city
   form.salaryRange = next.salaryRange
   form.sourcePlatform = next.sourcePlatform
-  form.jobUrl = next.jobUrl
   form.jdText = next.jdText
   form.statusId = next.statusId
   form.notes = next.notes
@@ -82,7 +80,6 @@ async function save() {
     city: form.city?.trim() || null,
     salaryRange: form.salaryRange?.trim() || null,
     sourcePlatform: form.sourcePlatform?.trim() || null,
-    jobUrl: form.jobUrl?.trim() || null,
     jdText: form.jdText?.trim(),
     statusId: form.statusId || null,
     notes: form.notes?.trim() || null,
@@ -170,7 +167,6 @@ async function copyTailoredResume(result: TailoredResume, part: 'content' | 'not
         <label>薪资<BaseInput v-model="form.salaryRange" /></label>
         <label>平台<BaseInput v-model="form.sourcePlatform" /></label>
       </div>
-      <label>链接<BaseInput v-model="form.jobUrl" /></label>
       <label>
         状态
         <select v-model="form.statusId">
