@@ -20,6 +20,8 @@ import type {
   GreetingGenerateInput,
   JobPostCreateInput,
   JobPostListQuery,
+  JobPostParsedDto,
+  JobPostParseInput,
   JobPostUpdateInput,
   ResumeListQuery,
   ResumeUpdateInput,
@@ -166,6 +168,24 @@ export const jobSearchService = {
       createdAt: now,
       updatedAt: now,
     })
+  },
+
+  async parseJobPost(input: JobPostParseInput): Promise<JobPostParsedDto> {
+    const generated = await generateText({
+      temperature: 0.1,
+      messages: [
+        {
+          role: 'system',
+          content:
+            '你是中文招聘 JD 信息抽取助手。你只从用户提供的 JD 原文中抽取字段，不要编造。输出必须是合法 JSON，不要 Markdown 代码块。',
+        },
+        {
+          role: 'user',
+          content: buildJobPostParsePrompt(input.jdText),
+        },
+      ],
+    })
+    return parseJobPostOutput(generated)
   },
 
   async updateJobPost(id: string, input: JobPostUpdateInput): Promise<JobPost> {
@@ -351,6 +371,87 @@ function buildGreetingPrompt(jobPost: JobPost): string {
     `薪资：${jobPost.salaryRange ?? '未填写'}`,
     `JD：${jobPost.jdText}`,
   ].join('\n')
+}
+
+function buildJobPostParsePrompt(jdText: string): string {
+  return [
+    '请从下面的招聘 JD 原文中抽取岗位信息。',
+    '输出必须是合法 JSON，不要 Markdown 代码块，不要额外解释。',
+    'JSON 字段：',
+    '{',
+    '  "companyName": "公司名称或 null",',
+    '  "jobTitle": "岗位名称或 null",',
+    '  "jobDirection": "岗位方向，例如 前端开发/产品经理/后端开发/AI产品，无法判断则 null",',
+    '  "city": "城市或 null",',
+    '  "salaryRange": "薪资范围，例如 20-30K 或 null",',
+    '  "sourcePlatform": "招聘平台，例如 Boss直聘 或 null",',
+    '  "jobUrl": "岗位链接或 null",',
+    '  "notes": "从 JD 中值得记录的补充信息，无法判断则 null"',
+    '}',
+    '',
+    '要求：',
+    '1. 只能基于原文抽取，不要猜测公司或岗位。',
+    '2. 岗位方向要短，适合用于分组。',
+    '3. 如果原文没有明确字段，返回 null。',
+    '4. 输出完全中文字段值。',
+    '',
+    'JD 原文：',
+    jdText,
+  ].join('\n')
+}
+
+function parseJobPostOutput(raw: string): JobPostParsedDto {
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim()
+
+  try {
+    const parsed = JSON.parse(cleaned) as Record<string, unknown>
+    return {
+      companyName: normalizeOptionalField(parsed.companyName),
+      jobTitle: normalizeOptionalField(parsed.jobTitle),
+      jobDirection: normalizeOptionalField(parsed.jobDirection),
+      city: normalizeOptionalField(parsed.city),
+      salaryRange: normalizeOptionalField(parsed.salaryRange),
+      sourcePlatform: normalizeOptionalField(parsed.sourcePlatform),
+      jobUrl: normalizeOptionalUrl(parsed.jobUrl),
+      notes: normalizeOptionalField(parsed.notes),
+    }
+  } catch {
+    return emptyParsedJobPost()
+  }
+}
+
+function emptyParsedJobPost(): JobPostParsedDto {
+  return {
+    companyName: null,
+    jobTitle: null,
+    jobDirection: null,
+    city: null,
+    salaryRange: null,
+    sourcePlatform: null,
+    jobUrl: null,
+    notes: null,
+  }
+}
+
+function normalizeOptionalField(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!trimmed || trimmed.toLowerCase() === 'null') return null
+  return trimmed
+}
+
+function normalizeOptionalUrl(value: unknown): string | null {
+  const text = normalizeOptionalField(value)
+  if (!text) return null
+  try {
+    return new URL(text).toString()
+  } catch {
+    return null
+  }
 }
 
 function buildTailoredResumePrompt(resume: Resume, jobPost: JobPost): string {

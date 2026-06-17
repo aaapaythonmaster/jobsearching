@@ -8,6 +8,7 @@ import {
   GreetingGenerateSchema,
   JobPostCreateSchema,
   JobPostListQuerySchema,
+  JobPostParseSchema,
   JobPostUpdateSchema,
   JobSearchIdSchema,
   RequirementAnalysisGenerateSchema,
@@ -62,6 +63,12 @@ export const jobSearchController = {
     const input = JobPostCreateSchema.parse(req.body)
     const data = await jobSearchService.createJobPost(input)
     return reply.status(201).send(success(data, 'created'))
+  },
+
+  async parseJobPost(req: FastifyRequest, reply: FastifyReply) {
+    const input = JobPostParseSchema.parse(req.body)
+    const data = await jobSearchService.parseJobPost(input)
+    return reply.send(success(data, 'parsed'))
   },
 
   async updateJobPost(req: FastifyRequest, reply: FastifyReply) {

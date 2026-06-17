@@ -8,6 +8,7 @@ export async function jobSearchRoutes(app: FastifyInstance) {
   app.delete('/statuses/:id', jobSearchController.removeStatus)
 
   app.get('/jobs', jobSearchController.listJobPosts)
+  app.post('/jobs/parse', jobSearchController.parseJobPost)
   app.get('/jobs/:id/greetings', jobSearchController.listGreetingDrafts)
   app.get('/jobs/:id/tailored-resumes', jobSearchController.listTailoredResumesByJobPost)
   app.get('/jobs/:id', jobSearchController.getJobPost)

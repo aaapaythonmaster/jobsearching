@@ -7,6 +7,8 @@ import type {
   GreetingGenerateInput,
   JobPost,
   JobPostCreateInput,
+  JobPostParsed,
+  JobPostParseInput,
   JobPostUpdateInput,
   RequirementAnalysis,
   RequirementAnalysisGenerateInput,
@@ -59,6 +61,7 @@ export const jobSearchApi = {
   listJobs: (query: JobPostListQuery = {}) =>
     http.get<JobPost[]>('/job-search/jobs', { query: cleanQuery(query) }),
   getJob: (id: string) => http.get<JobPost>(`/job-search/jobs/${id}`),
+  parseJob: (input: JobPostParseInput) => http.post<JobPostParsed>('/job-search/jobs/parse', input),
   createJob: (input: JobPostCreateInput) => http.post<JobPost>('/job-search/jobs', input),
   updateJob: (id: string, input: JobPostUpdateInput) =>
     http.patch<JobPost>(`/job-search/jobs/${id}`, input),

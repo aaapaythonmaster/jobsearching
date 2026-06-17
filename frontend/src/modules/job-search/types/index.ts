@@ -73,6 +73,21 @@ export interface JobPostUpdateInput {
   notes?: string | null
 }
 
+export interface JobPostParsed {
+  companyName: string | null
+  jobTitle: string | null
+  jobDirection: string | null
+  city: string | null
+  salaryRange: string | null
+  sourcePlatform: string | null
+  jobUrl: string | null
+  notes: string | null
+}
+
+export interface JobPostParseInput {
+  jdText: string
+}
+
 export interface GreetingDraft {
   id: string
   jobPostId: string

@@ -4,14 +4,18 @@ import { useRouter } from 'vue-router'
 import BaseButton from '@/components/BaseButton/index.vue'
 import BaseEmpty from '@/components/BaseEmpty/index.vue'
 import BaseInput from '@/components/BaseInput/index.vue'
+import { jobSearchApi } from '../api'
 import { useJobSearchStore } from '../store'
-import type { JobPostCreateInput } from '../types'
+import type { JobPostCreateInput, JobPostParsed } from '../types'
 
 const store = useJobSearchStore()
 const router = useRouter()
 const keyword = ref('')
 const statusId = ref('')
 const jobDirection = ref('')
+const parsing = ref(false)
+const parseMessage = ref<string | null>(null)
+const parseError = ref<string | null>(null)
 const form = reactive<JobPostCreateInput>({
   companyName: '',
   jobTitle: '',
@@ -81,6 +85,44 @@ async function removeJob(id: string) {
   if (!window.confirm('确认删除这个岗位吗？')) return
   await store.removeJob(id)
 }
+
+async function parseJob() {
+  if (!form.jdText.trim()) {
+    parseError.value = '请先粘贴 JD 原文'
+    parseMessage.value = null
+    return
+  }
+  parsing.value = true
+  parseError.value = null
+  parseMessage.value = null
+  try {
+    const parsed = await jobSearchApi.parseJob({ jdText: form.jdText.trim() })
+    applyParsedJob(parsed)
+    parseMessage.value = '已识别并填入空白字段'
+  } catch (e) {
+    parseError.value = (e as Error).message
+  } finally {
+    parsing.value = false
+  }
+}
+
+function applyParsedJob(parsed: JobPostParsed) {
+  fillIfBlank('companyName', parsed.companyName)
+  fillIfBlank('jobTitle', parsed.jobTitle)
+  fillIfBlank('jobDirection', parsed.jobDirection)
+  fillIfBlank('city', parsed.city)
+  fillIfBlank('salaryRange', parsed.salaryRange)
+  fillIfBlank('sourcePlatform', parsed.sourcePlatform)
+  fillIfBlank('jobUrl', parsed.jobUrl)
+  fillIfBlank('notes', parsed.notes)
+}
+
+function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
+  if (!value) return
+  const current = form[field]
+  if (typeof current === 'string' && current.trim()) return
+  form[field] = value
+}
 </script>
 
 <template>
@@ -113,6 +155,13 @@ async function removeJob(id: string) {
           </select>
         </label>
         <label>JD 原文<textarea v-model="form.jdText" rows="9" placeholder="粘贴 JD 原文" /></label>
+        <div class="parse-actions">
+          <BaseButton type="button" variant="secondary" :loading="parsing" @click="parseJob">
+            识别并填入
+          </BaseButton>
+          <span v-if="parseMessage" class="parse-actions__message">{{ parseMessage }}</span>
+          <span v-if="parseError" class="parse-actions__error">{{ parseError }}</span>
+        </div>
         <label>备注<textarea v-model="form.notes" rows="3" placeholder="可选" /></label>
         <BaseButton type="submit" :loading="store.loading">保存岗位</BaseButton>
       </form>
@@ -223,6 +272,23 @@ textarea {
 
 textarea {
   resize: vertical;
+}
+
+.parse-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: @space-sm;
+
+  &__message {
+    color: @color-success;
+    font-size: @font-size-sm;
+  }
+
+  &__error {
+    color: @color-danger;
+    font-size: @font-size-sm;
+  }
 }
 
 .job-list {

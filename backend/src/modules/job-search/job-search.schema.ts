@@ -144,6 +144,21 @@ export const JobPostSchema = z.object({
   updatedAt: z.string(),
 })
 
+export const JobPostParseSchema = z.object({
+  jdText: z.string().trim().min(20),
+})
+
+export const JobPostParsedSchema = z.object({
+  companyName: z.string().nullable(),
+  jobTitle: z.string().nullable(),
+  jobDirection: z.string().nullable(),
+  city: z.string().nullable(),
+  salaryRange: z.string().nullable(),
+  sourcePlatform: z.string().nullable(),
+  jobUrl: z.string().nullable(),
+  notes: z.string().nullable(),
+})
+
 export const GreetingStyleSchema = z.enum(['concise-natural']).default('concise-natural')
 
 export const GreetingGenerateSchema = z.object({
@@ -220,6 +235,8 @@ export type GreetingGenerateInput = z.infer<typeof GreetingGenerateSchema>
 export type GreetingStyle = z.infer<typeof GreetingStyleSchema>
 export type JobPostCreateInput = z.infer<typeof JobPostCreateSchema>
 export type JobPostListQuery = z.infer<typeof JobPostListQuerySchema>
+export type JobPostParsedDto = z.infer<typeof JobPostParsedSchema>
+export type JobPostParseInput = z.infer<typeof JobPostParseSchema>
 export type JobPostUpdateInput = z.infer<typeof JobPostUpdateSchema>
 export type ResumeFileType = z.infer<typeof ResumeFileTypeSchema>
 export type ResumeListQuery = z.infer<typeof ResumeListQuerySchema>
