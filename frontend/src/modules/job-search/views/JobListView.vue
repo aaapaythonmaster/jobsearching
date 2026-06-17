@@ -136,7 +136,18 @@ function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
 
     <div class="job-page__grid">
       <form class="panel" @submit.prevent="createJob">
-        <h3>新增岗位</h3>
+        <div>
+          <h3>新增岗位</h3>
+          <p class="panel__hint">先粘贴 JD 原文，由 AI 识别字段，再人工检查修改。</p>
+        </div>
+        <label>JD 原文<textarea v-model="form.jdText" rows="9" placeholder="先粘贴完整 JD 原文" /></label>
+        <div class="parse-actions">
+          <BaseButton type="button" variant="secondary" :loading="parsing" @click="parseJob">
+            AI 识别并填入字段
+          </BaseButton>
+          <span v-if="parseMessage" class="parse-actions__message">{{ parseMessage }}</span>
+          <span v-if="parseError" class="parse-actions__error">{{ parseError }}</span>
+        </div>
         <label>公司<BaseInput v-model="form.companyName" placeholder="公司名称" /></label>
         <label>岗位<BaseInput v-model="form.jobTitle" placeholder="岗位名称" /></label>
         <label>方向<BaseInput v-model="form.jobDirection" placeholder="例如 AI产品" /></label>
@@ -154,14 +165,6 @@ function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
             </option>
           </select>
         </label>
-        <label>JD 原文<textarea v-model="form.jdText" rows="9" placeholder="粘贴 JD 原文" /></label>
-        <div class="parse-actions">
-          <BaseButton type="button" variant="secondary" :loading="parsing" @click="parseJob">
-            识别并填入
-          </BaseButton>
-          <span v-if="parseMessage" class="parse-actions__message">{{ parseMessage }}</span>
-          <span v-if="parseError" class="parse-actions__error">{{ parseError }}</span>
-        </div>
         <label>备注<textarea v-model="form.notes" rows="3" placeholder="可选" /></label>
         <BaseButton type="submit" :loading="store.loading">保存岗位</BaseButton>
       </form>
@@ -248,6 +251,13 @@ function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
 
   h3 {
     font-size: @font-size-lg;
+  }
+
+  &__hint {
+    margin-top: @space-xs;
+    color: @color-text-secondary;
+    font-size: @font-size-sm;
+    line-height: 1.6;
   }
 
   label {
