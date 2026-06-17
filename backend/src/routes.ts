@@ -1,4 +1,5 @@
 import fp from 'fastify-plugin'
+import jobSearchModule from './modules/job-search'
 import todoModule from './modules/todo'
 
 /**
@@ -8,6 +9,7 @@ import todoModule from './modules/todo'
 export default fp(
   async (app) => {
     await app.register(todoModule)
+    await app.register(jobSearchModule)
   },
   { name: 'app-routes' },
 )

@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { z } from 'zod'
 
 /**
@@ -14,6 +15,11 @@ const EnvSchema = z
     DB_DIALECT: z.enum(['sqlite', 'postgres']).default('sqlite'),
     DB_SQLITE_FILE: z.string().default('./data/dev.db'),
     DATABASE_URL: z.string().url().optional(),
+
+    AI_PROVIDER: z.enum(['deepseek']).default('deepseek'),
+    AI_API_KEY: z.string().min(1).optional(),
+    AI_MODEL: z.string().default('deepseek-chat'),
+    AI_BASE_URL: z.string().url().default('https://api.deepseek.com'),
   })
   .superRefine((value, ctx) => {
     if (value.DB_DIALECT === 'postgres' && !value.DATABASE_URL) {

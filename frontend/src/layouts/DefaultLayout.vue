@@ -5,9 +5,12 @@ import { RouterLink, RouterView } from 'vue-router'
 <template>
   <div class="layout">
     <header class="layout__header">
-      <RouterLink to="/" class="layout__brand">vibeCoding</RouterLink>
+      <RouterLink to="/" class="layout__brand">求职工作台</RouterLink>
       <nav class="layout__nav">
-        <RouterLink to="/todos" active-class="is-active">Todos</RouterLink>
+        <RouterLink to="/job-search/jobs" active-class="is-active">岗位</RouterLink>
+        <RouterLink to="/job-search/resumes" active-class="is-active">简历</RouterLink>
+        <RouterLink to="/job-search/analysis" active-class="is-active">分析</RouterLink>
+        <RouterLink to="/job-search/statuses" active-class="is-active">状态</RouterLink>
       </nav>
     </header>
     <main class="layout__main">

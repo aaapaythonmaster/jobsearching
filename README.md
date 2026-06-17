@@ -1,89 +1,43 @@
-# vibeCoding
+# Job Searching MVP
 
-A Codex-friendly fullstack template designed for AI-driven development.
+个人求职工作台，用于保存 Boss 直聘 JD、管理基础简历、生成 HR 打招呼内容、基于 JD 调整简历，以及提取一批 JD 的共性要求。
 
-- `frontend/` Vue 3 + TypeScript + Less + Vite + Pinia + Vue Router
-- `backend/` Node.js + Fastify + TypeScript + zod, with a pluggable
-  database layer (SQLite for demo, PostgreSQL for production).
+## 功能范围
 
-The two sub-projects are independent (each has its own `package.json`).
-They are organized around the **closed-loop module** principle: every
-business feature lives in `src/modules/<name>/` and exposes a single
-`index.ts`. See [`AGENTS.md`](./AGENTS.md) for the agent contract.
+- 岗位 JD 管理：新增、筛选、详情编辑、删除岗位。
+- 求职状态管理：自定义状态名称、颜色和排序。
+- 基础简历管理：上传 Word/PDF，提取文本，保存多份基础简历。
+- HR 打招呼生成：基于单条 JD 调用 DeepSeek 生成 Boss 直聘开场内容，并保存历史草稿。
+- 调整版简历生成：选择基础简历和目标 JD，生成投递该岗位用的简历草稿，原始简历不被修改。
+- JD 共性分析：手动选择一批 JD，按岗位方向分组提取共性技能、经验、工具、软性要求和风险提醒。
 
-## Superpowers + Skills
+## 技术栈
 
-This repo bundles [Superpowers](https://github.com/obra/superpowers) (general agent
-workflow) and project-specific [Codex Skills](https://developers.openai.com/codex/skills)
-under [`.agents/skills/`](.agents/skills/) for **module split**, **database design**,
-and **API contracts**.
+- Frontend: Vue 3, TypeScript, Less, Vite, Pinia, Vue Router
+- Backend: Node.js, Fastify, TypeScript, zod
+- Database: SQLite for local use, PostgreSQL-compatible migration files
+- AI Provider: DeepSeek
 
-### First-time setup
-
-```bash
-bash scripts/install-superpowers.sh
-```
-
-This clones Superpowers into `vendor/superpowers/` and links
-`.agents/skills/superpowers/` for Codex. For Cursor, import this repo as a
-Team Marketplace (Dashboard → Settings → Plugins) or run `/add-plugin superpowers`
-in Agent chat.
-
-Launch Codex from the repository root:
-
-```bash
-cd /path/to/vibeCoding
-codex
-```
-
-Recommended prompt for a new feature:
-
-```text
-$vibecoding-codex-workflow
-$vibecoding-architecture-design
-$vibecoding-fullstack-module
-Add a "note" module with title + content, full CRUD.
-First design from the current code structure, then implement and run verify.sh.
-```
-
-### Skills
-
-| Skill | Purpose |
-|-------|---------|
-| `$vibecoding-codex-workflow` | Default Codex entrypoint and skill router |
-| `$vibecoding-architecture-design` | Required design gate before coding |
-| Superpowers (`brainstorming`, `writing-plans`, …) | Design, TDD, debugging, planning |
-| `$vibecoding-backend-module` | Backend module + migrations + zod API |
-| `$vibecoding-frontend-module` | Frontend module + api client + routes |
-| `$vibecoding-fullstack-module` | Both sides with contract alignment |
-| `$vibecoding-verify` | Architecture gate (must pass before done) |
-
-### Verify script
-
-```bash
-bash .agents/skills/vibecoding-verify/scripts/verify.sh
-```
-
-Checks (in order):
-
-1. **Module split** — required files, import boundaries, route registration
-2. **Migrations** — sqlite/pg pairs, global `NNNN_` numbering
-3. **Database DDL** — TEXT id, no AUTOINCREMENT/SERIAL, dialect bool/time types
-4. **API contract** — zod schema, `/api/<name>` prefix, frontend path alignment
-5. **type-check + lint** — both frontend and backend
-
-Success output: `verify: ALL PASSED`. Errors are prefixed with `[ARCH]` and a rule ID
-(e.g. `MIG-PAIR`, `MOD-FE-FETCH`, `API-ALIGN`).
-
-## Quickstart
+## 本地启动
 
 ### Backend
 
 ```bash
 cd backend
 npm install
-cp .env.example .env   # default uses sqlite, no extra setup
-npm run dev            # http://localhost:3000
+cp .env.example .env
+npm run dev
+```
+
+Backend 默认运行在 `http://localhost:3000`。
+
+在 `backend/.env` 中配置 DeepSeek：
+
+```env
+AI_PROVIDER=deepseek
+AI_MODEL=deepseek-chat
+AI_BASE_URL=https://api.deepseek.com
+AI_API_KEY=你的 DeepSeek API Key
 ```
 
 ### Frontend
@@ -91,55 +45,69 @@ npm run dev            # http://localhost:3000
 ```bash
 cd frontend
 npm install
-npm run dev            # http://localhost:5173
+npm run dev
 ```
 
-The frontend dev server proxies `/api` to `http://localhost:3000`.
+Frontend 默认运行在 `http://localhost:5173`，并将 `/api` 代理到 `http://localhost:3000`。
 
-## Switching to PostgreSQL
+## 验证
 
-In `backend/.env`:
+在仓库根目录运行：
 
-```env
-DB_DIALECT=postgres
-DATABASE_URL=postgres://user:pass@host:5432/dbname
+```bash
+bash .agents/skills/vibecoding-verify/scripts/verify.sh
 ```
 
-Then run migrations and start the server:
+成功时会输出：
+
+```text
+verify: ALL PASSED
+```
+
+也可以分别运行：
 
 ```bash
 cd backend
-npm run db:migrate
-npm run start
+npm run type-check
+npm run lint
+
+cd ../frontend
+npm run type-check
+npm run lint
 ```
 
-## Project layout
+## 数据说明
 
-```
+- 本地默认使用 SQLite。
+- 上传的原始简历文件保存在 `backend/data/job-search/resumes/`。
+- `backend/data/` 已被 git 忽略，不会提交个人数据、数据库文件或上传文件。
+- `.env` 已被 git 忽略，不要提交真实 API Key。
+
+## 项目结构
+
+```text
 .
-├── AGENTS.md                # Agent contract + Skill router (read me first)
-├── .cursor-plugin/          # Cursor Team Marketplace (Superpowers)
-├── .agents/skills/          # Superpowers + vibecoding Codex Skills
-├── scripts/install-superpowers.sh
-├── vendor/superpowers/      # Cloned by install script (gitignored)
-├── frontend/                # Vue 3 + Vite
-│   └── src/
-│       ├── components/      # Base UI components (no business)
-│       ├── composables/     # Generic hooks
-│       ├── utils/           # Generic utils (request, storage, format, ...)
-│       ├── styles/          # Less tokens & resets
-│       ├── layouts/
-│       ├── router/, store/
-│       └── modules/         # Closed-loop business modules
-│           └── todo/        # Sample feature module
-└── backend/                 # Fastify + TS
-    └── src/
-        ├── plugins/         # Fastify plugins (cors, logger, error-handler)
-        ├── utils/           # http-error, response, id, logger
-        ├── middleware/      # Generic preHandlers (auth skeleton)
-        ├── db/              # Database abstraction (sqlite/pg adapters)
-        ├── modules/         # Closed-loop business modules
-        │   └── todo/
-        ├── config/
-        ├── app.ts, server.ts, routes.ts
+├── backend/
+│   └── src/modules/job-search/
+│       ├── job-search.schema.ts
+│       ├── job-search.repository.ts
+│       ├── job-search.service.ts
+│       ├── job-search.controller.ts
+│       ├── job-search.routes.ts
+│       └── migrations/
+└── frontend/
+    └── src/modules/job-search/
+        ├── api/
+        ├── store/
+        ├── types/
+        ├── views/
+        └── routes.ts
 ```
+
+## 当前 MVP 不包含
+
+- 多用户账号和权限。
+- Word/PDF 导出调整版简历。
+- 复杂投递统计图表。
+- 自动抓取 Boss 直聘数据。
+- 在线部署和生产环境鉴权。
