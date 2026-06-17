@@ -50,6 +50,16 @@ npm run dev
 
 Frontend 默认运行在 `http://localhost:5173`，并将 `/api` 代理到 `http://localhost:3000`。
 
+如果 `3000` 已被其他服务占用，可以让后端和前端代理使用另一个端口：
+
+```bash
+cd backend
+PORT=3001 npm run dev
+
+cd ../frontend
+VITE_API_PROXY_TARGET=http://localhost:3001 npm run dev -- --host 127.0.0.1 --port 5176 --strictPort
+```
+
 ## 验证
 
 在仓库根目录运行：
