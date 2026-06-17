@@ -7,6 +7,7 @@ import type {
   GreetingGenerateInput,
   JobPost,
   JobPostCreateInput,
+  JobPostImageExtracted,
   JobPostParsed,
   JobPostParseInput,
   JobPostUpdateInput,
@@ -62,6 +63,11 @@ export const jobSearchApi = {
     http.get<JobPost[]>('/job-search/jobs', { query: cleanQuery(query) }),
   getJob: (id: string) => http.get<JobPost>(`/job-search/jobs/${id}`),
   parseJob: (input: JobPostParseInput) => http.post<JobPostParsed>('/job-search/jobs/parse', input),
+  extractJobImage(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return http.post<JobPostImageExtracted>('/job-search/jobs/extract-jd-image', form)
+  },
   createJob: (input: JobPostCreateInput) => http.post<JobPost>('/job-search/jobs', input),
   updateJob: (id: string, input: JobPostUpdateInput) =>
     http.patch<JobPost>(`/job-search/jobs/${id}`, input),

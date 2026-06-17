@@ -88,6 +88,10 @@ export interface JobPostParseInput {
   jdText: string
 }
 
+export interface JobPostImageExtracted {
+  jdText: string
+}
+
 export interface GreetingDraft {
   id: string
   jobPostId: string

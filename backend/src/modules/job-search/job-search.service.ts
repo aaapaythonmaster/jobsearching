@@ -19,6 +19,7 @@ import type {
   ApplicationStatusUpdateInput,
   GreetingGenerateInput,
   JobPostCreateInput,
+  JobPostImageExtractedDto,
   JobPostListQuery,
   JobPostParsedDto,
   JobPostParseInput,
@@ -37,6 +38,13 @@ export interface ResumeUploadInput {
   size: number
   buffer: Buffer
   metadata: ResumeUploadMetadata
+}
+
+export interface JobPostImageExtractInput {
+  fileName: string
+  mimeType: string
+  size: number
+  buffer: Buffer
 }
 
 /**
@@ -186,6 +194,38 @@ export const jobSearchService = {
       ],
     })
     return parseJobPostOutput(generated)
+  },
+
+  async extractJobPostImage(input: JobPostImageExtractInput): Promise<JobPostImageExtractedDto> {
+    if (!input.mimeType.startsWith('image/')) throw BadRequestError('JD screenshot must be an image')
+    if (input.size > 8 * 1024 * 1024) throw BadRequestError('JD screenshot must be smaller than 8MB')
+
+    const dataUrl = `data:${input.mimeType};base64,${input.buffer.toString('base64')}`
+    const jdText = await generateText({
+      temperature: 0,
+      messages: [
+        {
+          role: 'system',
+          content:
+            '你是中文 OCR 助手。请从招聘岗位截图中提取完整 JD 原文。只输出识别出的文本，不要解释，不要总结，不要 Markdown。',
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: '请识别这张岗位 JD 截图中的全部招聘文本，尽量保留公司、岗位、城市、薪资、职责、要求等信息。',
+            },
+            {
+              type: 'image_url',
+              image_url: { url: dataUrl },
+            },
+          ],
+        },
+      ],
+    })
+
+    return { jdText }
   },
 
   async updateJobPost(id: string, input: JobPostUpdateInput): Promise<JobPost> {

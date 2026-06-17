@@ -71,6 +71,21 @@ export const jobSearchController = {
     return reply.send(success(data, 'parsed'))
   },
 
+  async extractJobPostImage(req: FastifyRequest, reply: FastifyReply) {
+    if (!req.isMultipart()) throw BadRequestError('Expected multipart/form-data')
+    const file = await req.file()
+    if (!file) throw BadRequestError('JD screenshot is required')
+
+    const buffer = await file.toBuffer()
+    const data = await jobSearchService.extractJobPostImage({
+      fileName: file.filename,
+      mimeType: file.mimetype,
+      size: buffer.length,
+      buffer,
+    })
+    return reply.send(success(data, 'extracted'))
+  },
+
   async updateJobPost(req: FastifyRequest, reply: FastifyReply) {
     const { id } = JobSearchIdSchema.parse(req.params)
     const input = JobPostUpdateSchema.parse(req.body)

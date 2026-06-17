@@ -13,9 +13,11 @@ const router = useRouter()
 const keyword = ref('')
 const statusId = ref('')
 const jobDirection = ref('')
+const extractingImage = ref(false)
 const parsing = ref(false)
 const parseMessage = ref<string | null>(null)
 const parseError = ref<string | null>(null)
+const jdImageInput = ref<HTMLInputElement | null>(null)
 const form = reactive<JobPostCreateInput>({
   companyName: '',
   jobTitle: '',
@@ -103,6 +105,31 @@ async function parseJob() {
   }
 }
 
+async function extractImageAndParse(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  extractingImage.value = true
+  parseError.value = null
+  parseMessage.value = null
+  try {
+    const extracted = await jobSearchApi.extractJobImage(file)
+    form.jdText = extracted.jdText
+    parseMessage.value = '已识别截图中的 JD 原文'
+    await parseJob()
+  } catch (e) {
+    parseError.value = (e as Error).message
+  } finally {
+    extractingImage.value = false
+    input.value = ''
+  }
+}
+
+function chooseJdImage() {
+  jdImageInput.value?.click()
+}
+
 function applyParsedJob(parsed: JobPostParsed) {
   fillIfBlank('companyName', parsed.companyName)
   fillIfBlank('jobTitle', parsed.jobTitle)
@@ -134,12 +161,24 @@ function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
       <form class="panel" @submit.prevent="createJob">
         <div>
           <h3>新增岗位</h3>
-          <p class="panel__hint">先粘贴 JD 原文，由 AI 识别字段，再人工检查修改。</p>
+          <p class="panel__hint">先上传 JD 截图，AI 识别原文和字段，再人工检查修改。</p>
+        </div>
+        <input
+          ref="jdImageInput"
+          class="visually-hidden"
+          type="file"
+          accept="image/*"
+          @change="extractImageAndParse"
+        />
+        <div class="parse-actions">
+          <BaseButton type="button" variant="secondary" :loading="extractingImage" @click="chooseJdImage">
+            上传 JD 截图并识别
+          </BaseButton>
         </div>
         <label>JD 原文<textarea v-model="form.jdText" rows="9" placeholder="先粘贴完整 JD 原文" /></label>
         <div class="parse-actions">
           <BaseButton type="button" variant="secondary" :loading="parsing" @click="parseJob">
-            AI 识别并填入字段
+            从 JD 原文识别字段
           </BaseButton>
           <span v-if="parseMessage" class="parse-actions__message">{{ parseMessage }}</span>
           <span v-if="parseError" class="parse-actions__error">{{ parseError }}</span>
@@ -294,6 +333,15 @@ textarea {
     color: @color-danger;
     font-size: @font-size-sm;
   }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .job-list {
