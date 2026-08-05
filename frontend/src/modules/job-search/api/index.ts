@@ -37,10 +37,10 @@ export interface JobPostListQuery {
   jobDirection?: string
 }
 
-function cleanQuery<T extends Record<string, string | undefined>>(query: T): T {
+function cleanQuery(query: object): Record<string, string | undefined> {
   return Object.fromEntries(
     Object.entries(query).filter(([, value]) => value !== undefined && value !== ''),
-  ) as T
+  ) as Record<string, string | undefined>
 }
 
 export const jobSearchApi = {

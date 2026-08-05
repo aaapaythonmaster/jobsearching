@@ -5,7 +5,7 @@ import BaseButton from '@/components/BaseButton/index.vue'
 import BaseInput from '@/components/BaseInput/index.vue'
 import { jobSearchApi } from '../api'
 import { useJobSearchStore } from '../store'
-import type { GreetingDraft, JobPost, JobPostUpdateInput, TailoredResume } from '../types'
+import type { GreetingDraft, JobPost, TailoredResume } from '../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,7 +22,20 @@ const selectedResumeId = ref('')
 const tailoredLoading = ref(false)
 const tailoredError = ref<string | null>(null)
 const copiedTailoredId = ref<string | null>(null)
-const form = reactive<JobPostUpdateInput>({
+
+interface JobEditForm {
+  companyName: string
+  jobTitle: string
+  jobDirection: string
+  city: string
+  salaryRange: string
+  sourcePlatform: string
+  jdText: string
+  statusId: string | null
+  notes: string
+}
+
+const form = reactive<JobEditForm>({
   companyName: '',
   jobTitle: '',
   jobDirection: '',
@@ -63,12 +76,12 @@ function fillForm(next: JobPost) {
   form.companyName = next.companyName
   form.jobTitle = next.jobTitle
   form.jobDirection = next.jobDirection
-  form.city = next.city
-  form.salaryRange = next.salaryRange
-  form.sourcePlatform = next.sourcePlatform
+  form.city = next.city ?? ''
+  form.salaryRange = next.salaryRange ?? ''
+  form.sourcePlatform = next.sourcePlatform ?? ''
   form.jdText = next.jdText
   form.statusId = next.statusId
-  form.notes = next.notes
+  form.notes = next.notes ?? ''
 }
 
 async function save() {

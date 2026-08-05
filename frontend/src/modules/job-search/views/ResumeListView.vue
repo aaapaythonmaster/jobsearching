@@ -4,7 +4,7 @@ import BaseButton from '@/components/BaseButton/index.vue'
 import BaseEmpty from '@/components/BaseEmpty/index.vue'
 import BaseInput from '@/components/BaseInput/index.vue'
 import { useJobSearchStore } from '../store'
-import type { Resume, ResumeUpdateInput } from '../types'
+import type { Resume } from '../types'
 
 const store = useJobSearchStore()
 const keyword = ref('')
@@ -16,7 +16,7 @@ const uploadForm = reactive({
   notes: '',
 })
 const editing = ref<Resume | null>(null)
-const editForm = reactive<ResumeUpdateInput>({
+const editForm = reactive({
   name: '',
   targetRole: '',
   contentText: '',
@@ -54,9 +54,9 @@ async function upload() {
 function startEdit(resume: Resume) {
   editing.value = resume
   editForm.name = resume.name
-  editForm.targetRole = resume.targetRole
+  editForm.targetRole = resume.targetRole ?? ''
   editForm.contentText = resume.contentText
-  editForm.notes = resume.notes
+  editForm.notes = resume.notes ?? ''
 }
 
 async function saveEdit() {
