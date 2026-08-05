@@ -1,33 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/BaseButton/index.vue'
 import BaseEmpty from '@/components/BaseEmpty/index.vue'
 import BaseInput from '@/components/BaseInput/index.vue'
 import { jobSearchApi } from '../api'
+import JobDraftReview from '../components/JobDraftReview.vue'
+import JobImageQueue from '../components/JobImageQueue.vue'
+import { useJobImageQueue } from '../composables/useJobImageQueue'
 import { useJobSearchStore } from '../store'
-import type { JobPostCreateInput, JobPostParsed } from '../types'
+import type { JobPostCreateInput, RejectedJobImage } from '../types'
 
 const store = useJobSearchStore()
 const router = useRouter()
 const keyword = ref('')
 const statusId = ref('')
 const jobDirection = ref('')
-const extractingImage = ref(false)
-const parsing = ref(false)
-const parseMessage = ref<string | null>(null)
-const parseError = ref<string | null>(null)
-const jdImageInput = ref<HTMLInputElement | null>(null)
-const form = reactive<JobPostCreateInput>({
-  companyName: '',
-  jobTitle: '',
-  jobDirection: '',
-  city: '',
-  salaryRange: '',
-  sourcePlatform: 'Boss直聘',
-  jdText: '',
-  statusId: '',
-  notes: '',
+const uploadError = ref<string | null>(null)
+
+const queue = useJobImageQueue({
+  extract: jobSearchApi.extractJobImage,
+  parse: (jdText) => jobSearchApi.parseJob({ jdText }),
 })
 
 const statusName = computed(() => {
@@ -47,22 +40,38 @@ function clean(input: JobPostCreateInput): JobPostCreateInput {
     city: input.city?.trim() || undefined,
     salaryRange: input.salaryRange?.trim() || undefined,
     sourcePlatform: input.sourcePlatform?.trim() || undefined,
+    jobUrl: input.jobUrl?.trim() || undefined,
     jdText: input.jdText.trim(),
     statusId: input.statusId || undefined,
     notes: input.notes?.trim() || undefined,
   }
 }
 
-function resetForm() {
-  form.companyName = ''
-  form.jobTitle = ''
-  form.jobDirection = ''
-  form.city = ''
-  form.salaryRange = ''
-  form.sourcePlatform = 'Boss直聘'
-  form.jdText = ''
-  form.statusId = ''
-  form.notes = ''
+function addScreenshots(files: File[]) {
+  const result = queue.addFiles(files)
+  const messages: string[] = []
+  if (result.selectionError) messages.push(result.selectionError)
+  if (result.rejected.length > 0) messages.push(formatRejected(result.rejected))
+  uploadError.value = messages.length > 0 ? messages.join('；') : null
+}
+
+function formatRejected(rejected: RejectedJobImage[]) {
+  return rejected
+    .map((item) => `${item.fileName}（${item.reason === 'too_large' ? '超过 8MB' : '不是图片'}）`)
+    .join('、')
+}
+
+async function saveDraft(draft: JobPostCreateInput) {
+  const task = queue.activeTask.value
+  if (!task) return
+  queue.updateDraft(task.id, draft)
+  queue.markSaving(task.id)
+  try {
+    await store.createJob(clean(draft))
+    queue.markSaved(task.id)
+  } catch (error) {
+    queue.markSaveFailed(task.id, (error as Error).message)
+  }
 }
 
 async function search() {
@@ -73,78 +82,9 @@ async function search() {
   })
 }
 
-async function createJob() {
-  if (!form.companyName.trim() || !form.jobTitle.trim() || !form.jobDirection.trim() || !form.jdText.trim()) return
-  const job = await store.createJob(clean(form))
-  resetForm()
-  await router.push({ name: 'job-search-job-detail', params: { id: job.id } })
-}
-
 async function removeJob(id: string) {
   if (!window.confirm('确认删除这个岗位吗？')) return
   await store.removeJob(id)
-}
-
-async function parseJob() {
-  if (!form.jdText.trim()) {
-    parseError.value = '请先粘贴 JD 原文'
-    parseMessage.value = null
-    return
-  }
-  parsing.value = true
-  parseError.value = null
-  parseMessage.value = null
-  try {
-    const parsed = await jobSearchApi.parseJob({ jdText: form.jdText.trim() })
-    applyParsedJob(parsed)
-    parseMessage.value = '已识别并填入空白字段'
-  } catch (e) {
-    parseError.value = (e as Error).message
-  } finally {
-    parsing.value = false
-  }
-}
-
-async function extractImageAndParse(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-
-  extractingImage.value = true
-  parseError.value = null
-  parseMessage.value = null
-  try {
-    const extracted = await jobSearchApi.extractJobImage(file)
-    form.jdText = extracted.jdText
-    parseMessage.value = '已识别截图中的 JD 原文'
-    await parseJob()
-  } catch (e) {
-    parseError.value = (e as Error).message
-  } finally {
-    extractingImage.value = false
-    input.value = ''
-  }
-}
-
-function chooseJdImage() {
-  jdImageInput.value?.click()
-}
-
-function applyParsedJob(parsed: JobPostParsed) {
-  fillIfBlank('companyName', parsed.companyName)
-  fillIfBlank('jobTitle', parsed.jobTitle)
-  fillIfBlank('jobDirection', parsed.jobDirection)
-  fillIfBlank('city', parsed.city)
-  fillIfBlank('salaryRange', parsed.salaryRange)
-  fillIfBlank('sourcePlatform', parsed.sourcePlatform)
-  fillIfBlank('notes', parsed.notes)
-}
-
-function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
-  if (!value) return
-  const current = form[field]
-  if (typeof current === 'string' && current.trim()) return
-  form[field] = value
 }
 </script>
 
@@ -153,89 +93,70 @@ function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
     <header class="job-page__header">
       <div>
         <h2>岗位 JD</h2>
-        <p>保存 Boss 直聘岗位，记录方向与进展。</p>
+        <p>批量识别岗位截图，逐条检查后保存并记录进展。</p>
       </div>
     </header>
 
-    <div class="job-page__grid">
-      <form class="panel" @submit.prevent="createJob">
-        <div>
-          <h3>新增岗位</h3>
-          <p class="panel__hint">先上传 JD 截图，AI 识别原文和字段，再人工检查修改。</p>
-        </div>
-        <input
-          ref="jdImageInput"
-          class="visually-hidden"
-          type="file"
-          accept="image/*"
-          @change="extractImageAndParse"
+    <section class="panel job-create">
+      <header class="job-create__header">
+        <h3>新增岗位</h3>
+        <p>每张截图对应一个岗位；单次最多 10 张，同时识别 2 张。</p>
+      </header>
+      <p v-if="uploadError" class="job-create__error">{{ uploadError }}</p>
+      <div class="job-create__workspace">
+        <JobImageQueue
+          :tasks="queue.tasks.value"
+          :selected-task-id="queue.selectedTaskId.value"
+          :processing="queue.processing.value"
+          @files="addScreenshots"
+          @select="queue.selectTask"
+          @retry="queue.retryTask"
+          @remove="queue.removeTask"
         />
-        <div class="parse-actions">
-          <BaseButton type="button" variant="secondary" :loading="extractingImage" @click="chooseJdImage">
-            上传 JD 截图并识别
-          </BaseButton>
-        </div>
-        <label>JD 原文<textarea v-model="form.jdText" rows="9" placeholder="先粘贴完整 JD 原文" /></label>
-        <div class="parse-actions">
-          <BaseButton type="button" variant="secondary" :loading="parsing" @click="parseJob">
-            从 JD 原文识别字段
-          </BaseButton>
-          <span v-if="parseMessage" class="parse-actions__message">{{ parseMessage }}</span>
-          <span v-if="parseError" class="parse-actions__error">{{ parseError }}</span>
-        </div>
-        <label>公司<BaseInput v-model="form.companyName" placeholder="公司名称" /></label>
-        <label>岗位<BaseInput v-model="form.jobTitle" placeholder="岗位名称" /></label>
-        <label>方向<BaseInput v-model="form.jobDirection" placeholder="例如 AI产品" /></label>
-        <div class="job-page__row">
-          <label>城市<BaseInput v-model="form.city" placeholder="城市" /></label>
-          <label>薪资<BaseInput v-model="form.salaryRange" placeholder="20-30K" /></label>
-        </div>
-        <label>
-          状态
-          <select v-model="form.statusId">
-            <option value="">未设置</option>
-            <option v-for="status in store.statuses" :key="status.id" :value="status.id">
-              {{ status.name }}
-            </option>
-          </select>
-        </label>
-        <label>备注<textarea v-model="form.notes" rows="3" placeholder="可选" /></label>
-        <BaseButton type="submit" :loading="store.loading">保存岗位</BaseButton>
-      </form>
-
-      <div class="panel">
-        <div class="job-page__filters">
-          <BaseInput v-model="keyword" placeholder="搜索公司、岗位、JD" @enter="search" />
-          <BaseInput v-model="jobDirection" placeholder="岗位方向" @enter="search" />
-          <select v-model="statusId">
-            <option value="">全部状态</option>
-            <option v-for="status in store.statuses" :key="status.id" :value="status.id">
-              {{ status.name }}
-            </option>
-          </select>
-          <BaseButton variant="secondary" @click="search">筛选</BaseButton>
-        </div>
-
-        <div v-if="store.error" class="state state--error">{{ store.error }}</div>
-        <div v-else-if="store.loading && store.jobs.length === 0" class="state">加载中...</div>
-        <BaseEmpty v-else-if="store.jobs.length === 0" description="暂无岗位" />
-        <div v-else class="job-list">
-          <article v-for="job in store.jobs" :key="job.id" class="job-card">
-            <div>
-              <h3>{{ job.jobTitle }}</h3>
-              <p>{{ job.companyName }} · {{ job.jobDirection }} · {{ job.city || '城市未填' }}</p>
-              <p>{{ statusName(job.statusId) }} · {{ job.salaryRange || '薪资未填' }}</p>
-            </div>
-            <div class="job-card__actions">
-              <BaseButton size="sm" @click="router.push({ name: 'job-search-job-detail', params: { id: job.id } })">
-                查看
-              </BaseButton>
-              <BaseButton size="sm" variant="danger" @click="removeJob(job.id)">删除</BaseButton>
-            </div>
-          </article>
-        </div>
+        <JobDraftReview
+          :task="queue.activeTask.value"
+          :statuses="store.statuses"
+          @update:draft="(draft) => queue.activeTask.value && queue.updateDraft(queue.activeTask.value.id, draft)"
+          @save="saveDraft"
+          @skip="queue.selectNextReady"
+          @retry="queue.retryTask"
+          @remove="queue.removeTask"
+        />
       </div>
-    </div>
+    </section>
+
+    <section class="panel">
+      <div class="job-page__filters">
+        <BaseInput v-model="keyword" placeholder="搜索公司、岗位、JD" @enter="search" />
+        <BaseInput v-model="jobDirection" placeholder="岗位方向" @enter="search" />
+        <select v-model="statusId">
+          <option value="">全部状态</option>
+          <option v-for="status in store.statuses" :key="status.id" :value="status.id">
+            {{ status.name }}
+          </option>
+        </select>
+        <BaseButton variant="secondary" @click="search">筛选</BaseButton>
+      </div>
+
+      <div v-if="store.error" class="state state--error">{{ store.error }}</div>
+      <div v-else-if="store.loading && store.jobs.length === 0" class="state">加载中...</div>
+      <BaseEmpty v-else-if="store.jobs.length === 0" description="暂无岗位" />
+      <div v-else class="job-list">
+        <article v-for="job in store.jobs" :key="job.id" class="job-card">
+          <div>
+            <h3>{{ job.jobTitle }}</h3>
+            <p>{{ job.companyName }} · {{ job.jobDirection }} · {{ job.city || '城市未填' }}</p>
+            <p>{{ statusName(job.statusId) }} · {{ job.salaryRange || '薪资未填' }}</p>
+          </div>
+          <div class="job-card__actions">
+            <BaseButton size="sm" @click="router.push({ name: 'job-search-job-detail', params: { id: job.id } })">
+              查看
+            </BaseButton>
+            <BaseButton size="sm" variant="danger" @click="removeJob(job.id)">删除</BaseButton>
+          </div>
+        </article>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -254,21 +175,10 @@ function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
     color: @color-text-secondary;
   }
 
-  &__grid {
-    display: grid;
-    grid-template-columns: minmax(320px, 420px) 1fr;
-    gap: @space-lg;
-  }
-
-  &__row,
   &__filters {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: @space-md;
-  }
-
-  &__filters {
     grid-template-columns: 1fr 180px 180px auto;
+    gap: @space-md;
     align-items: center;
     margin-bottom: @space-lg;
   }
@@ -279,32 +189,39 @@ function fillIfBlank(field: keyof JobPostCreateInput, value: string | null) {
   border: 1px solid @color-border;
   border-radius: @radius-md;
   padding: @space-lg;
-  display: flex;
-  flex-direction: column;
-  gap: @space-md;
 
   h3 {
     font-size: @font-size-lg;
   }
+}
 
-  &__hint {
+.job-create {
+  display: flex;
+  flex-direction: column;
+  gap: @space-md;
+
+  &__header p {
     margin-top: @space-xs;
     color: @color-text-secondary;
     font-size: @font-size-sm;
-    line-height: 1.6;
   }
 
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: @space-xs;
-    color: @color-text-secondary;
+  &__error {
+    border-radius: @radius-md;
+    padding: @space-sm @space-md;
+    background: fade(@color-danger, 8%);
+    color: @color-danger;
     font-size: @font-size-sm;
+  }
+
+  &__workspace {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: @space-lg;
   }
 }
 
-select,
-textarea {
+select {
   width: 100%;
   border: 1px solid @color-border-strong;
   border-radius: @radius-md;
@@ -312,36 +229,6 @@ textarea {
   background: @color-bg;
   color: @color-text;
   font: inherit;
-}
-
-textarea {
-  resize: vertical;
-}
-
-.parse-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: @space-sm;
-
-  &__message {
-    color: @color-success;
-    font-size: @font-size-sm;
-  }
-
-  &__error {
-    color: @color-danger;
-    font-size: @font-size-sm;
-  }
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
 }
 
 .job-list {
@@ -386,7 +273,7 @@ textarea {
 }
 
 @media (max-width: 960px) {
-  .job-page__grid,
+  .job-create__workspace,
   .job-page__filters {
     grid-template-columns: 1fr;
   }

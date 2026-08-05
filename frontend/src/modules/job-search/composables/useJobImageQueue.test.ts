@@ -168,4 +168,15 @@ describe('useJobImageQueue scheduler', () => {
     expect(queue.tasks.value.map((task) => task.id)).toEqual([secondId])
     expect(queue.selectedTaskId.value).toBe(secondId)
   })
+
+  it('skips from the current ready task to the next ready task', async () => {
+    const queue = useJobImageQueue(options())
+    queue.addFiles([image('first.png'), image('second.png')])
+    await vi.waitFor(() => expect(queue.tasks.value.every((task) => task.status === 'ready')).toBe(true))
+    queue.selectTask(queue.tasks.value[0].id)
+
+    queue.selectNextReady()
+
+    expect(queue.selectedTaskId.value).toBe(queue.tasks.value[1].id)
+  })
 })

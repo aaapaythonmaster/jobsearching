@@ -50,7 +50,13 @@ export function useJobImageQueue(options: JobImageQueueOptions) {
   }
 
   function selectNextReady() {
-    const next = tasks.value.find((task) => task.status === 'ready' || task.status === 'save_failed')
+    const currentIndex = tasks.value.findIndex((task) => task.id === selectedTaskId.value)
+    const ordered = [...tasks.value.slice(currentIndex + 1), ...tasks.value.slice(0, currentIndex + 1)]
+    const next = ordered.find(
+      (task) =>
+        task.id !== selectedTaskId.value &&
+        (task.status === 'ready' || task.status === 'save_failed'),
+    )
     selectedTaskId.value = next?.id ?? null
   }
 
