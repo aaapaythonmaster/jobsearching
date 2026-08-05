@@ -40,6 +40,100 @@ export function useJobImageQueue(options: JobImageQueueOptions) {
   )
   const createId = options.createId ?? (() => crypto.randomUUID())
   const createPreviewUrl = options.createPreviewUrl ?? URL.createObjectURL
+  const revokePreviewUrl = options.revokePreviewUrl ?? URL.revokeObjectURL
+  let activeCount = 0
+
+  const processing = computed(() => activeCount > 0 || tasks.value.some((task) => task.status === 'queued'))
+
+  function selectTask(id: string) {
+    if (tasks.value.some((task) => task.id === id)) selectedTaskId.value = id
+  }
+
+  function selectNextReady() {
+    const next = tasks.value.find((task) => task.status === 'ready' || task.status === 'save_failed')
+    selectedTaskId.value = next?.id ?? null
+  }
+
+  function updateDraft(id: string, patch: Partial<JobPostCreateInput>) {
+    const task = tasks.value.find((item) => item.id === id)
+    if (task) task.draft = { ...task.draft, ...patch }
+  }
+
+  function markSaving(id: string) {
+    const task = tasks.value.find((item) => item.id === id)
+    if (!task) return
+    task.status = 'saving'
+    task.error = null
+  }
+
+  function markSaveFailed(id: string, message: string) {
+    const task = tasks.value.find((item) => item.id === id)
+    if (!task) return
+    task.status = 'save_failed'
+    task.error = message
+  }
+
+  function removeTask(id: string) {
+    const index = tasks.value.findIndex((item) => item.id === id)
+    if (index < 0) return
+    const task = tasks.value[index]
+    task.removed = true
+    revokePreviewUrl(task.previewUrl)
+    tasks.value.splice(index, 1)
+    if (selectedTaskId.value === id) selectNextReady()
+  }
+
+  function markSaved(id: string) {
+    removeTask(id)
+  }
+
+  function retryTask(id: string) {
+    const task = tasks.value.find((item) => item.id === id)
+    if (!task || (task.status !== 'extract_failed' && task.status !== 'save_failed')) return
+    task.status = 'queued'
+    task.error = null
+    pump()
+  }
+
+  function pump() {
+    while (activeCount < 2) {
+      const task = tasks.value.find((item) => item.status === 'queued' && !item.removed)
+      if (!task) return
+      activeCount += 1
+      task.status = 'extracting'
+      void recognize(task).finally(() => {
+        activeCount -= 1
+        pump()
+      })
+    }
+  }
+
+  async function recognize(task: JobImageTask) {
+    try {
+      const { jdText } = await options.extract(task.file)
+      const parsed = await options.parse(jdText)
+      if (task.removed) return
+      task.draft = {
+        ...task.draft,
+        jdText,
+        companyName: parsed.companyName ?? '',
+        jobTitle: parsed.jobTitle ?? '',
+        jobDirection: parsed.jobDirection ?? '',
+        city: parsed.city ?? '',
+        salaryRange: parsed.salaryRange ?? '',
+        sourcePlatform: parsed.sourcePlatform ?? 'Boss直聘',
+        jobUrl: parsed.jobUrl ?? '',
+        notes: parsed.notes ?? '',
+      }
+      task.status = 'ready'
+      task.error = null
+      if (!selectedTaskId.value) selectedTaskId.value = task.id
+    } catch (error) {
+      if (task.removed) return
+      task.status = 'extract_failed'
+      task.error = (error as Error).message
+    }
+  }
 
   function addFiles(files: File[]) {
     if (files.length > MAX_FILES) {
@@ -74,9 +168,24 @@ export function useJobImageQueue(options: JobImageQueueOptions) {
         removed: false,
       })),
     )
+    pump()
 
     return { accepted: accepted.length, rejected, selectionError: null }
   }
 
-  return { tasks, selectedTaskId, activeTask, addFiles }
+  return {
+    tasks,
+    selectedTaskId,
+    activeTask,
+    processing,
+    addFiles,
+    selectTask,
+    selectNextReady,
+    retryTask,
+    removeTask,
+    updateDraft,
+    markSaving,
+    markSaved,
+    markSaveFailed,
+  }
 }
