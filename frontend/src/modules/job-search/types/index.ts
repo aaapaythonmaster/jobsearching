@@ -92,6 +92,29 @@ export interface JobPostImageExtracted {
   jdText: string
 }
 
+export type JobImageTaskStatus =
+  | 'queued'
+  | 'extracting'
+  | 'ready'
+  | 'saving'
+  | 'extract_failed'
+  | 'save_failed'
+
+export interface JobImageTask {
+  id: string
+  file: File
+  previewUrl: string
+  status: JobImageTaskStatus
+  draft: JobPostCreateInput
+  error: string | null
+  removed: boolean
+}
+
+export interface RejectedJobImage {
+  fileName: string
+  reason: 'not_image' | 'too_large'
+}
+
 export interface GreetingDraft {
   id: string
   jobPostId: string
