@@ -35,7 +35,8 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
   baseURL?: string
 }
 
-const DEFAULT_BASE_URL = '/api'
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+const DEFAULT_BASE_URL = configuredBaseUrl ? configuredBaseUrl.replace(/\/+$/, '') : '/api'
 
 function buildUrl(input: string, query?: RequestOptions['query'], baseURL = DEFAULT_BASE_URL) {
   const url = input.startsWith('http') ? input : `${baseURL}${input.startsWith('/') ? '' : '/'}${input}`
