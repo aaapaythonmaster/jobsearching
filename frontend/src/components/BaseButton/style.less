@@ -5,10 +5,10 @@
   gap: @space-xs;
   border: 1px solid transparent;
   border-radius: @radius-md;
-  font-weight: 500;
+  font-weight: 650;
   cursor: pointer;
   transition: background-color @transition-fast, border-color @transition-fast,
-    color @transition-fast;
+    color @transition-fast, transform @transition-fast, box-shadow @transition-fast;
   user-select: none;
 
   &--block {
@@ -33,22 +33,27 @@
   }
 
   &--primary {
-    background-color: @color-primary;
+    background: linear-gradient(135deg, @color-primary-hover, @color-primary);
     color: @color-text-inverse;
+    box-shadow: @shadow-sm;
     &:hover:not(:disabled) {
-      background-color: @color-primary-hover;
+      transform: translateY(-1px);
+      filter: brightness(1.03);
     }
     &:active:not(:disabled) {
-      background-color: @color-primary-active;
+      transform: translateY(1px);
+      filter: brightness(0.96);
     }
   }
   &--secondary {
     background-color: @color-bg;
     color: @color-text;
-    border-color: @color-border-strong;
+    border-color: @color-border;
+    backdrop-filter: blur(18px);
     &:hover:not(:disabled) {
       border-color: @color-primary;
       color: @color-primary;
+      background-color: fade(@color-primary, 12%);
     }
   }
   &--danger {
@@ -62,7 +67,8 @@
     background-color: transparent;
     color: @color-text;
     &:hover:not(:disabled) {
-      background-color: @color-bg-muted;
+      background-color: fade(@color-primary, 10%);
+      color: @color-primary-hover;
     }
   }
 

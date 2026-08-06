@@ -49,6 +49,9 @@ const form = reactive<JobEditForm>({
 
 onMounted(async () => {
   await Promise.all([store.fetchStatuses(), store.fetchResumes(), load()])
+  if (!selectedResumeId.value && store.resumes.length) {
+    selectedResumeId.value = store.resumes[0].id
+  }
 })
 
 async function load() {
@@ -102,10 +105,17 @@ async function save() {
 
 async function generateGreeting() {
   if (!job.value) return
+  if (!selectedResumeId.value) {
+    greetingError.value = '请先选择一份基础简历'
+    return
+  }
   greetingLoading.value = true
   greetingError.value = null
   try {
-    const draft = await jobSearchApi.generateGreeting({ jobPostId: job.value.id })
+    const draft = await jobSearchApi.generateGreeting({
+      jobPostId: job.value.id,
+      resumeId: selectedResumeId.value,
+    })
     greetingDrafts.value = [draft, ...greetingDrafts.value]
     copiedDraftId.value = null
   } catch (e) {
@@ -147,15 +157,11 @@ async function generateTailoredResume() {
   }
 }
 
-async function copyTailoredResume(result: TailoredResume, part: 'content' | 'notes') {
+async function copyTailoredResume(result: TailoredResume) {
   tailoredError.value = null
-  const text =
-    part === 'content'
-      ? result.content
-      : ['修改说明：', result.changeNotes, '', '风险提醒：', result.riskNotes].join('\n')
   try {
-    await navigator.clipboard.writeText(text)
-    copiedTailoredId.value = `${result.id}:${part}`
+    await navigator.clipboard.writeText(result.content)
+    copiedTailoredId.value = result.id
   } catch {
     tailoredError.value = '复制失败，请手动选中文案复制'
   }
@@ -172,6 +178,13 @@ async function copyTailoredResume(result: TailoredResume, part: 'content' | 'not
         <h2>{{ job.jobTitle }}</h2>
         <p>{{ job.companyName }}</p>
       </header>
+      <BaseButton
+        type="button"
+        variant="ghost"
+        @click="router.push({ name: 'interview-prep-project', params: { jobPostId: job.id } })"
+      >
+        面试准备
+      </BaseButton>
       <div class="detail-page__grid">
         <label>公司<BaseInput v-model="form.companyName" /></label>
         <label>岗位<BaseInput v-model="form.jobTitle" /></label>
@@ -197,13 +210,23 @@ async function copyTailoredResume(result: TailoredResume, part: 'content' | 'not
       <header class="greeting-panel__header">
         <div>
           <h3>HR 打招呼内容</h3>
-          <p>基于当前 JD 生成，生成结果会保留为历史草稿。</p>
+          <p>基于当前 JD 和基础简历生成，生成结果会保留为历史草稿。</p>
         </div>
         <BaseButton type="button" :loading="greetingLoading" @click="generateGreeting">
           生成打招呼
         </BaseButton>
       </header>
+      <label>
+        基础简历
+        <select v-model="selectedResumeId">
+          <option value="">请选择基础简历</option>
+          <option v-for="resume in store.resumes" :key="resume.id" :value="resume.id">
+            {{ resume.name }}{{ resume.targetRole ? ` / ${resume.targetRole}` : '' }}
+          </option>
+        </select>
+      </label>
       <p v-if="greetingError" class="state state--error">{{ greetingError }}</p>
+      <div v-if="!store.resumes.length" class="state">还没有基础简历，请先在简历页上传 Word 或 PDF</div>
       <div v-if="greetingDrafts.length" class="greeting-list">
         <article v-for="draft in greetingDrafts" :key="draft.id" class="greeting-item">
           <p>{{ draft.content }}</p>
@@ -220,8 +243,8 @@ async function copyTailoredResume(result: TailoredResume, part: 'content' | 'not
     <section v-if="job" class="panel tailored-panel">
       <header class="greeting-panel__header">
         <div>
-          <h3>调整版简历</h3>
-          <p>选择一份基础简历，基于当前 JD 生成投递版本，原始简历不会被修改。</p>
+          <h3>简历调整建议</h3>
+          <p>选择一份基础简历，基于当前 JD 生成可复制的调整建议，原始简历不会被修改。</p>
         </div>
         <BaseButton
           type="button"
@@ -229,7 +252,7 @@ async function copyTailoredResume(result: TailoredResume, part: 'content' | 'not
           :loading="tailoredLoading"
           @click="generateTailoredResume"
         >
-          生成简历
+          生成调整建议
         </BaseButton>
       </header>
       <label>
@@ -251,29 +274,18 @@ async function copyTailoredResume(result: TailoredResume, part: 'content' | 'not
               <span>{{ new Date(result.createdAt).toLocaleString('zh-CN') }}</span>
             </div>
             <div class="tailored-item__actions">
-              <BaseButton type="button" variant="ghost" @click="copyTailoredResume(result, 'content')">
-                {{ copiedTailoredId === `${result.id}:content` ? '已复制' : '复制简历' }}
-              </BaseButton>
-              <BaseButton type="button" variant="ghost" @click="copyTailoredResume(result, 'notes')">
-                {{ copiedTailoredId === `${result.id}:notes` ? '已复制' : '复制说明' }}
+              <BaseButton type="button" variant="ghost" @click="copyTailoredResume(result)">
+                {{ copiedTailoredId === result.id ? '已复制' : '复制调整建议' }}
               </BaseButton>
             </div>
           </header>
           <section>
-            <h4>简历正文</h4>
+            <h4>调整建议</h4>
             <pre>{{ result.content }}</pre>
-          </section>
-          <section class="tailored-item__notes">
-            <h4>修改说明</h4>
-            <p>{{ result.changeNotes }}</p>
-          </section>
-          <section class="tailored-item__notes">
-            <h4>风险提醒</h4>
-            <p>{{ result.riskNotes }}</p>
           </section>
         </article>
       </div>
-      <div v-else class="state">还没有生成过调整版简历</div>
+      <div v-else class="state">还没有生成过简历调整建议</div>
     </section>
   </section>
 </template>

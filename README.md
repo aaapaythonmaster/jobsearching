@@ -7,7 +7,7 @@
 - 岗位 JD 管理：新增、筛选、详情编辑、删除岗位。
 - 求职状态管理：自定义状态名称、颜色和排序。
 - 基础简历管理：上传 Word/PDF，提取文本，保存多份基础简历。
-- HR 打招呼生成：基于单条 JD 调用 DeepSeek 生成 Boss 直聘开场内容，并保存历史草稿。
+- HR 打招呼生成：基于单条 JD 调用智谱 AI 生成 Boss 直聘开场内容，并保存历史草稿。
 - 调整版简历生成：选择基础简历和目标 JD，生成投递该岗位用的简历草稿，原始简历不被修改。
 - JD 共性分析：手动选择一批 JD，按岗位方向分组提取共性技能、经验、工具、软性要求和风险提醒。
 
@@ -16,7 +16,33 @@
 - Frontend: Vue 3, TypeScript, Less, Vite, Pinia, Vue Router
 - Backend: Node.js, Fastify, TypeScript, zod
 - Database: SQLite for local use, PostgreSQL-compatible migration files
-- AI Provider: DeepSeek
+- AI Provider: Zhipu AI OpenAI-compatible chat completions
+
+## 稳定预览方式
+
+开发预览固定使用本仓库目录 `/Users/elijah/Downloads/jobsearching-mvp`，避免前端连到旧模板目录的后端。
+
+在仓库根目录运行：
+
+```bash
+bash scripts/stop-preview.sh
+bash scripts/dev-preview.sh
+bash scripts/status-preview.sh
+```
+
+预览页面只打开：
+
+```text
+http://127.0.0.1:5176/job-search/jobs
+```
+
+脚本会固定启动：
+
+- Backend: `http://127.0.0.1:3001`
+- Frontend: `http://127.0.0.1:5176`
+- Logs: `.dev/backend.log` 和 `.dev/frontend.log`
+
+不要直接在浏览器打开 `POST` API 地址，例如 `/api/job-search/jobs/extract-jd-image`。JD 截图识别必须从页面里的“上传 JD 截图并识别”按钮上传图片触发。
 
 ## 本地启动
 
@@ -31,13 +57,16 @@ npm run dev
 
 Backend 默认运行在 `http://localhost:3000`。
 
-在 `backend/.env` 中配置 DeepSeek：
+在 `backend/.env` 中配置智谱 AI：
 
 ```env
-AI_PROVIDER=deepseek
-AI_MODEL=deepseek-chat
-AI_BASE_URL=https://api.deepseek.com
-AI_API_KEY=你的 DeepSeek API Key
+AI_PROVIDER=zhipu
+AI_MODEL=glm-5.2
+AI_OCR_MODEL=glm-ocr
+AI_BASE_URL=https://api.z.ai/api/paas/v4
+# 如果终端/Node 无法直连 AI 服务，可填本机代理，例如 Clash 常见端口：
+# AI_PROXY_URL=http://127.0.0.1:7897
+AI_API_KEY=你的智谱 AI API Key
 ```
 
 ### Frontend

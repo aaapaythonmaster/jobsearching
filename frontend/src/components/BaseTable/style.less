@@ -4,6 +4,7 @@
   border: 1px solid @color-border;
   border-radius: @radius-md;
   overflow: hidden;
+  box-shadow: @shadow-sm;
 
   &__wrapper {
     overflow: auto;
@@ -25,18 +26,16 @@
   }
 
   &__th {
-    background-color: @color-bg-muted;
+    background-color: fade(@color-primary, 8%);
     font-weight: 600;
     color: @color-text-secondary;
     font-size: @font-size-sm;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
   }
 
   &__row {
     transition: background-color @transition-fast;
     &:hover {
-      background-color: @color-bg-muted;
+      background-color: fade(@color-primary, 8%);
     }
     &:last-child .base-table__td {
       border-bottom: 0;

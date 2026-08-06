@@ -9,15 +9,17 @@
   &__mask {
     position: absolute;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.45);
+    background-color: rgba(3, 2, 6, 0.72);
     animation: base-modal-fade-in 0.18s ease-out;
   }
 
   &__panel {
     position: relative;
     background-color: @color-bg-elevated;
+    border: 1px solid @color-border;
     border-radius: @radius-lg;
     box-shadow: @shadow-lg;
+    backdrop-filter: blur(24px);
     max-width: 90vw;
     max-height: 85vh;
     display: flex;

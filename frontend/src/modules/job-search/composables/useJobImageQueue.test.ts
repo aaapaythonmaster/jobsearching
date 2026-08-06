@@ -98,6 +98,18 @@ describe('useJobImageQueue scheduler', () => {
     expect(queue.processing.value).toBe(false)
   })
 
+  it('updates processing after it was observed during recognition', async () => {
+    const pending = deferred<JobPostImageExtracted>()
+    const queue = useJobImageQueue({ ...options(), extract: () => pending.promise })
+    queue.addFiles([image('observed.png')])
+    expect(queue.processing.value).toBe(true)
+
+    pending.resolve({ jdText: '完整 JD 原文，包含足够的岗位描述内容' })
+    await vi.waitFor(() => expect(queue.tasks.value[0].status).toBe('ready'))
+
+    expect(queue.processing.value).toBe(false)
+  })
+
   it('retries failures through the same scheduler', async () => {
     const extract = vi
       .fn()

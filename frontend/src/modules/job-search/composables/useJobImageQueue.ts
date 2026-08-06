@@ -41,9 +41,11 @@ export function useJobImageQueue(options: JobImageQueueOptions) {
   const createId = options.createId ?? (() => crypto.randomUUID())
   const createPreviewUrl = options.createPreviewUrl ?? URL.createObjectURL
   const revokePreviewUrl = options.revokePreviewUrl ?? URL.revokeObjectURL
-  let activeCount = 0
+  const activeCount = ref(0)
 
-  const processing = computed(() => activeCount > 0 || tasks.value.some((task) => task.status === 'queued'))
+  const processing = computed(
+    () => activeCount.value > 0 || tasks.value.some((task) => task.status === 'queued'),
+  )
 
   function selectTask(id: string) {
     if (tasks.value.some((task) => task.id === id)) selectedTaskId.value = id
@@ -102,13 +104,13 @@ export function useJobImageQueue(options: JobImageQueueOptions) {
   }
 
   function pump() {
-    while (activeCount < 2) {
+    while (activeCount.value < 2) {
       const task = tasks.value.find((item) => item.status === 'queued' && !item.removed)
       if (!task) return
-      activeCount += 1
+      activeCount.value += 1
       task.status = 'extracting'
       void recognize(task).finally(() => {
-        activeCount -= 1
+        activeCount.value -= 1
         pump()
       })
     }

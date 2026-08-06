@@ -128,6 +128,7 @@ export interface GreetingDraft {
 
 export interface GreetingGenerateInput {
   jobPostId: string
+  resumeId: string
   style?: 'concise-natural'
 }
 

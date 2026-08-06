@@ -16,10 +16,13 @@ const EnvSchema = z
     DB_SQLITE_FILE: z.string().default('./data/dev.db'),
     DATABASE_URL: z.string().url().optional(),
 
-    AI_PROVIDER: z.enum(['deepseek']).default('deepseek'),
+    AI_PROVIDER: z.enum(['openai', 'zhipu']).default('zhipu'),
     AI_API_KEY: z.string().min(1).optional(),
-    AI_MODEL: z.string().default('deepseek-chat'),
-    AI_BASE_URL: z.string().url().default('https://api.deepseek.com'),
+    AI_MODEL: z.string().default('glm-5.2'),
+    AI_OCR_MODEL: z.string().default('glm-ocr'),
+    AI_VISION_MODEL: z.string().optional(),
+    AI_BASE_URL: z.string().url().default('https://api.z.ai/api/paas/v4'),
+    AI_PROXY_URL: z.string().url().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.DB_DIALECT === 'postgres' && !value.DATABASE_URL) {

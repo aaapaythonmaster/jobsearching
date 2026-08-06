@@ -3,7 +3,8 @@ import path from 'node:path'
 import { BadRequestError, ConflictError, NotFoundError } from '@/utils/http-error'
 import { nanoid } from '@/utils/id'
 import { detectResumeFileType, extractResumeText } from './job-search.document'
-import { generateText } from './job-search.ai'
+import { extractTextFromImage, generateText } from './job-search.ai'
+import { extractTextWithMacVision } from './job-search.ocr'
 import { jobSearchRepository } from './job-search.repository'
 import type {
   ApplicationStatus,
@@ -200,30 +201,10 @@ export const jobSearchService = {
     if (!input.mimeType.startsWith('image/')) throw BadRequestError('JD screenshot must be an image')
     if (input.size > 8 * 1024 * 1024) throw BadRequestError('JD screenshot must be smaller than 8MB')
 
-    const dataUrl = `data:${input.mimeType};base64,${input.buffer.toString('base64')}`
-    const jdText = await generateText({
-      temperature: 0,
-      messages: [
-        {
-          role: 'system',
-          content:
-            '你是中文 OCR 助手。请从招聘岗位截图中提取完整 JD 原文。只输出识别出的文本，不要解释，不要总结，不要 Markdown。',
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: '请识别这张岗位 JD 截图中的全部招聘文本，尽量保留公司、岗位、城市、薪资、职责、要求等信息。',
-            },
-            {
-              type: 'image_url',
-              image_url: { url: dataUrl },
-            },
-          ],
-        },
-      ],
-    })
+    const base64Image = input.buffer.toString('base64')
+    const jdText =
+      (await extractTextWithMacVision(input.buffer, input.mimeType)) ||
+      (await extractTextFromImage(base64Image, input.mimeType))
 
     return { jdText }
   },
@@ -251,8 +232,12 @@ export const jobSearchService = {
   },
 
   async generateGreeting(input: GreetingGenerateInput): Promise<GreetingDraft> {
-    const jobPost = await jobSearchRepository.findJobPostById(input.jobPostId)
+    const [jobPost, resume] = await Promise.all([
+      jobSearchRepository.findJobPostById(input.jobPostId),
+      jobSearchRepository.findResumeById(input.resumeId),
+    ])
     if (!jobPost) throw NotFoundError('job post')
+    if (!resume) throw NotFoundError('resume')
 
     const style = input.style ?? 'concise-natural'
     const content = await generateText({
@@ -260,12 +245,20 @@ export const jobSearchService = {
       messages: [
         {
           role: 'system',
-          content:
-            '你是中文求职沟通助手，专门帮求职者写 Boss 直聘开场招呼。输出必须自然、简短、专业，不夸大经历，不编造事实，不要标题，不要解释。',
+          content: [
+            '你是中文求职沟通助手，专门帮助求职者生成 BOSS 直聘打招呼内容。',
+            '你只能基于用户提供的岗位 JD 和基础简历内容输出。',
+            '仅允许参考简历中的「实习经历」「AI项目集/作品集」「技能」板块，其他板块禁止参考。',
+            '禁止编造无关经历，禁止编造数据，禁止把 JD 要求说成用户已有经历。',
+            '如果原简历没有结果型表达，不得新增结果或量化成果；如果原简历已有结果型表达，可以引用。',
+            '术语保留英文，例如 AI Agent、RAG、Prompt、Dify、Python。',
+            '输出将直接展示在网页中供用户复制粘贴，必须是纯文本。',
+            '禁止输出 JSON、Markdown 代码块、标题、解释性文字、分析过程或任何格式之外内容。',
+          ].join('\n'),
         },
         {
           role: 'user',
-          content: buildGreetingPrompt(jobPost),
+          content: buildGreetingPrompt(jobPost, resume),
         },
       ],
     })
@@ -277,7 +270,7 @@ export const jobSearchService = {
       content,
       style,
       modelName: env.AI_MODEL,
-      promptVersion: 'greeting-v1',
+      promptVersion: 'greeting-v2',
       createdAt: new Date().toISOString(),
     })
   },
@@ -301,8 +294,16 @@ export const jobSearchService = {
       messages: [
         {
           role: 'system',
-          content:
-            '你是中文求职简历优化助手。你只能基于用户提供的原始简历和岗位 JD 调整表达与结构，严禁编造不存在的经历、公司、学历、年限、项目和数据。输出必须是合法 JSON。',
+          content: [
+            '你是中文求职简历调整助手。',
+            '你只能基于用户提供的原始简历和岗位 JD，对已有内容进行顺序调整、表达改写和关键词强化。',
+            '禁止编造不存在的经历、公司、学历、年限、项目、工具、结果或数据。',
+            '允许将真实实践内容改写为更贴合 JD 要求的说法，但事实含义不能改变。',
+            '允许调整 bullet 顺序；不允许删除弱相关 bullet；不允许合并来自不同公司、不同时间或不同项目的相似内容。',
+            '术语保留英文，例如 AI Agent、RAG、Prompt、Dify、Python。',
+            '输出将直接展示在网页中供用户复制粘贴，必须是纯文本。',
+            '禁止输出 JSON、Markdown 代码块、标题、解释性文字、分析过程或任何格式之外内容。',
+          ].join('\n'),
         },
         {
           role: 'user',
@@ -322,7 +323,7 @@ export const jobSearchService = {
       changeNotes: parsed.changeNotes,
       riskNotes: parsed.riskNotes,
       modelName: env.AI_MODEL,
-      promptVersion: 'tailored-resume-v1',
+      promptVersion: 'tailored-resume-v2',
       createdAt: new Date().toISOString(),
     })
   },
@@ -395,14 +396,28 @@ async function ensureStatusExists(statusId: string | null | undefined): Promise<
   if (!status) throw NotFoundError('status')
 }
 
-function buildGreetingPrompt(jobPost: JobPost): string {
+function buildGreetingPrompt(jobPost: JobPost, resume: Resume): string {
   return [
-    '请根据下面的 Boss 直聘岗位 JD，生成一段可直接发给招聘者的中文打招呼内容。',
-    '要求：',
-    '1. 80 到 140 字左右。',
-    '2. 语气简短自然、专业匹配、不油腻。',
-    '3. 提到与岗位相关的匹配点，但不要编造具体年限、公司、项目经历。',
-    '4. 结尾表达希望进一步沟通。',
+    '请根据下面的 Boss 直聘岗位 JD 和基础简历，生成一段可直接复制发送的中文打招呼内容。',
+    '',
+    '内容规范：',
+    '1. 输出 2-4 点，允许少于 4 点；如果只输出 2-3 点，不要保留空编号。',
+    '2. 每点约 50 字；如果与 JD 极为匹配，可以写到约 70 字。',
+    '3. 最符合 JD 的匹配点放最前面。',
+    '4. 可以写可迁移工作能力，但必须放在更匹配的内容之后，并明确体现为可迁移能力。',
+    '5. 可以出现项目名、公司名，但一切必须来自简历原文。',
+    '6. 只能聚焦简历中的「实习经历」「AI项目集/作品集」「技能」板块。',
+    '7. 禁止参考简历其他部分，禁止编造无关经历，禁止编造数据。',
+    '8. 结合 JD 要求与简历内容，生成“JD 匹配点 + 工作内容/成果”。',
+    '9. 如果原简历中没有结果型表达，不得新增结果或量化成果；如果原简历已有结果型表达，可以引用。',
+    '10. 技术术语保留英文。',
+    '',
+    '输出格式必须严格如下，不要添加任何其他文字；第 4 点仅在确有匹配内容时输出：',
+    '您好，我与贵岗的匹配点如下：',
+    '1.',
+    '2.',
+    '3.',
+    '4.',
     '',
     `公司：${jobPost.companyName}`,
     `岗位：${jobPost.jobTitle}`,
@@ -410,6 +425,11 @@ function buildGreetingPrompt(jobPost: JobPost): string {
     `城市：${jobPost.city ?? '未填写'}`,
     `薪资：${jobPost.salaryRange ?? '未填写'}`,
     `JD：${jobPost.jdText}`,
+    '',
+    `基础简历名称：${resume.name}`,
+    `基础简历目标方向：${resume.targetRole ?? '未填写'}`,
+    '基础简历正文：',
+    resume.contentText,
   ].join('\n')
 }
 
@@ -496,21 +516,34 @@ function normalizeOptionalUrl(value: unknown): string | null {
 
 function buildTailoredResumePrompt(resume: Resume, jobPost: JobPost): string {
   return [
-    '请根据岗位 JD，对原始中文简历做一版“投递该岗位用”的调整版简历。',
-    '输出必须是合法 JSON，不要 Markdown 代码块，不要额外解释。',
-    'JSON 字段：',
-    '{',
-    '  "content": "调整后的完整中文简历正文，可直接复制使用",',
-    '  "changeNotes": "本次主要调整点，使用中文条目说明",',
-    '  "riskNotes": "哪些内容不能确定或不建议夸大，使用中文条目说明"',
-    '}',
+    '请根据岗位 JD，对原始中文简历生成“简历修改调整建议”。',
+    '注意：不是输出完整新简历，而是逐条列出需要调整的原文与完整调整后内容。',
     '',
     '硬性要求：',
-    '1. 只能基于原始简历已有事实进行重组、改写、突出重点。',
-    '2. 可以调整标题、摘要、技能、项目描述顺序，使其更匹配 JD。',
-    '3. 不得编造公司、学校、项目、年限、绩效数字、证书、技术经验。',
-    '4. 对 JD 明确要求但原简历没有证据的能力，写进 riskNotes，不要写进 content。',
-    '5. content 保持中文简历格式，结构清晰，适合页面内复制。',
+    '1. 对需要修改的简历内容，先指出原文内容，再给出完整的调整后内容。',
+    '2. 逐条列出。',
+    '3. 禁止多余解释，仅呈现“对应 JD 要求 + 原文 + 调整后”。',
+    '4. “对应 JD 要求”必须概括成短标签，不要引用整段 JD。',
+    '5. 如果同一条原文匹配多个 JD 要求，只输出一次，并把短标签并列列出。',
+    '6. 根据不同岗位，将真实实践内容包装为对应 JD 要求的点；工作内容确实不假，只是换说法。',
+    '7. 可以调整 bullet 顺序。',
+    '8. 不允许删除弱相关 bullet。',
+    '9. 不允许合并来自不同公司、不同时间或不同项目的相似内容。',
+    '10. 不得编造公司、学校、项目、年限、绩效数字、证书、技术经验。',
+    '11. 如果原简历没有结果型表达，不得新增结果或量化成果；如果原简历已有结果型表达，可以引用。',
+    '12. 技术术语保留英文。',
+    '13. 严格禁止任何解释性文字、总结、建议、风险提醒。',
+    '',
+    '输出格式必须严格如下，不要添加任何其他文字：',
+    '1.',
+    '对应 JD 要求：短标签A、短标签B',
+    '原文：',
+    '调整后：',
+    '',
+    '2.',
+    '对应 JD 要求：短标签A',
+    '原文：',
+    '调整后：',
     '',
     `基础简历名称：${resume.name}`,
     `基础简历目标方向：${resume.targetRole ?? '未填写'}`,
@@ -537,23 +570,22 @@ interface TailoredResumeAiOutput {
 function parseTailoredResumeOutput(raw: string): TailoredResumeAiOutput {
   const cleaned = raw
     .trim()
-    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/^```(?:json|markdown|md)?\s*/i, '')
     .replace(/\s*```$/i, '')
     .trim()
 
-  try {
-    const parsed = JSON.parse(cleaned) as Partial<TailoredResumeAiOutput>
+  if (!cleaned) {
     return {
-      content: normalizeAiText(parsed.content) || raw,
-      changeNotes: normalizeAiText(parsed.changeNotes) || '未返回明确调整说明',
-      riskNotes: normalizeAiText(parsed.riskNotes) || '未返回明确风险提醒',
+      content: raw.trim(),
+      changeNotes: '纯文本简历调整建议',
+      riskNotes: '请人工复核生成内容是否严格基于原文',
     }
-  } catch {
-    return {
-      content: raw,
-      changeNotes: 'AI 未返回结构化调整说明',
-      riskNotes: 'AI 未返回结构化风险提醒，请人工复核生成内容是否有事实扩写',
-    }
+  }
+
+  return {
+    content: cleaned,
+    changeNotes: '纯文本简历调整建议',
+    riskNotes: '请人工复核生成内容是否严格基于原文',
   }
 }
 

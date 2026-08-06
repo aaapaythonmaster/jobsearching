@@ -167,6 +167,7 @@ export const GreetingStyleSchema = z.enum(['concise-natural']).default('concise-
 
 export const GreetingGenerateSchema = z.object({
   jobPostId: z.string().min(1),
+  resumeId: z.string().min(1),
   style: GreetingStyleSchema.optional(),
 })
 
