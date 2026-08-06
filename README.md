@@ -122,6 +122,18 @@ npm run lint
 - `backend/data/` 已被 git 忽略，不会提交个人数据、数据库文件或上传文件。
 - `.env` 已被 git 忽略，不要提交真实 API Key。
 
+## Render 免费部署
+
+仓库根目录的 `render.yaml` 会创建 Vue 静态站点、Fastify Web Service 和 PostgreSQL：
+
+1. 登录 Render，选择 **New > Blueprint**。
+2. 连接 GitHub 仓库 `aaapaythonmaster/jobsearching`。
+3. Render 读取根目录 `render.yaml` 后，填写后端的 `AI_API_KEY`。
+4. 创建 Blueprint，等待数据库、API 和前端依次完成部署。
+5. 访问前端地址，并打开后端 `/health` 检查数据库连接。
+
+免费 Web Service 会在闲置后休眠，首次请求可能需要等待。免费 PostgreSQL 会在 30 天后到期；本方案仅用于预览，长期使用请升级或迁移数据库。
+
 ## 项目结构
 
 ```text
@@ -149,4 +161,4 @@ npm run lint
 - Word/PDF 导出调整版简历。
 - 复杂投递统计图表。
 - 自动抓取 Boss 直聘数据。
-- 在线部署和生产环境鉴权。
+- 生产环境鉴权。
