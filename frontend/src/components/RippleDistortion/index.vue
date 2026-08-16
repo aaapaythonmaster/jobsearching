@@ -201,7 +201,13 @@ let uniforms: RippleUniforms | undefined
 
 function hexToRGB(hex: string): [number, number, number] {
   const clean = hex.replace('#', '')
-  const full = clean.length === 3 ? clean.split('').map((character) => character + character).join('') : clean
+  const full =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((character) => character + character)
+          .join('')
+      : clean
   const number = Number.parseInt(full, 16)
   if (Number.isNaN(number)) return [1, 1, 1]
   return [((number >> 16) & 255) / 255, ((number >> 8) & 255) / 255, (number & 255) / 255]
@@ -370,7 +376,8 @@ function mountRenderer(mount: HTMLDivElement): () => void {
   const localPoint = (clientX: number, clientY: number): [number, number] | null => {
     const rect = mount.getBoundingClientRect()
     if (rect.width === 0 || rect.height === 0) return null
-    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom)
+      return null
     return [clientX - rect.left, rect.height - (clientY - rect.top)]
   }
 
@@ -464,11 +471,7 @@ function startRenderer(): void {
 
 onMounted(startRenderer)
 
-watch(
-  () => [props.src, props.quality, props.enabled],
-  startRenderer,
-  { flush: 'post' },
-)
+watch(() => [props.src, props.quality, props.enabled], startRenderer, { flush: 'post' })
 
 watch(
   () => [

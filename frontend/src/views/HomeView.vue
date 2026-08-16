@@ -6,7 +6,8 @@ import hillsBackground from '@/assets/landing/background-hills.jpg'
 
 const router = useRouter()
 const backgrounds = [oceanBackground, hillsBackground] as const
-const selectedBackground = backgrounds[Math.floor(Math.random() * backgrounds.length)] ?? backgrounds[0]
+const selectedBackground =
+  backgrounds[Math.floor(Math.random() * backgrounds.length)] ?? backgrounds[0]
 
 function start(): void {
   void router.push({ name: 'job-search-jobs' })

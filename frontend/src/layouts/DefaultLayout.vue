@@ -69,7 +69,12 @@ const isImmersive = computed(() => route.meta.immersive === true)
     z-index: -1;
     pointer-events: none;
     background:
-      linear-gradient(90deg, fade(#09070f, 92%) 0%, fade(#09070f, 58%) 44%, fade(#09070f, 86%) 100%),
+      linear-gradient(
+        90deg,
+        fade(#09070f, 92%) 0%,
+        fade(#09070f, 58%) 44%,
+        fade(#09070f, 86%) 100%
+      ),
       linear-gradient(180deg, fade(#09070f, 16%) 0%, fade(#09070f, 96%) 100%);
   }
 
@@ -130,7 +135,9 @@ const isImmersive = computed(() => route.meta.immersive === true)
       padding: 0 @space-md;
       border-radius: @radius-sm;
       font-size: @font-size-md;
-      transition: color @transition-fast, background-color @transition-fast;
+      transition:
+        color @transition-fast,
+        background-color @transition-fast;
 
       &:hover {
         color: @color-primary-hover;
