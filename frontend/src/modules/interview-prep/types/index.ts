@@ -13,6 +13,14 @@ export type RoundLabel = '初面' | '复面' | '终面' | 'HR 面' | '笔试' | 
 export type IntroDuration = '2 分钟' | '3 分钟' | '5 分钟' | '自定义'
 export type FaqType = 'summary' | 'deep'
 
+export interface InterviewProjectOverview {
+  jobPostId: string
+  companyName: string
+  jobTitle: string
+  questionCount: number
+  latestQuestionAt: string | null
+}
+
 export interface ResumeBinding {
   jobPostId: string
   resumeId: string

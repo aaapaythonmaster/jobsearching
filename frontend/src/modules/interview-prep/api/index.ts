@@ -3,6 +3,7 @@ import type {
   AnswerVersion,
   DeepFaqGenerateInput,
   InterviewFaq,
+  InterviewProjectOverview,
   InterviewQuestion,
   InterviewQuestionCreateInput,
   InterviewQuestionUpdateInput,
@@ -14,10 +15,13 @@ import type {
 } from '../types'
 
 export const interviewPrepApi = {
+  listProjects: () => http.get<InterviewProjectOverview[]>('/interview-prep/projects'),
   getProjectSummary: (jobPostId: string) =>
     http.get<ProjectSummary>(`/interview-prep/projects/${jobPostId}/summary`),
   bindResume: (jobPostId: string, resumeId: string) =>
     http.put<ResumeBinding>(`/interview-prep/projects/${jobPostId}/resume-binding`, { resumeId }),
+  listQuestions: (jobPostId: string) =>
+    http.get<InterviewQuestion[]>(`/interview-prep/projects/${jobPostId}/questions`),
   createQuestion: (jobPostId: string, input: InterviewQuestionCreateInput) =>
     http.post<InterviewQuestion>(`/interview-prep/projects/${jobPostId}/questions`, input),
   updateQuestion: (questionId: string, input: InterviewQuestionUpdateInput) =>
