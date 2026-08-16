@@ -32,6 +32,9 @@ coverage/
 # Local brainstorming companion artifacts
 .superpowers/
 
+# Local Git worktrees
+.worktrees/
+
 # Vendored plugins (run: bash scripts/install-superpowers.sh)
 vendor/superpowers/
 
