@@ -5,7 +5,7 @@ import { interviewPrepRoutes } from '@/modules/interview-prep'
 import { jobSearchRoutes } from '@/modules/job-search'
 import { todoRoutes } from '@/modules/todo'
 
-const routes: RouteRecordRaw[] = [
+export const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: DefaultLayout,
@@ -13,7 +13,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'home',
-        redirect: { name: 'job-search-jobs' },
+        component: () => import('@/views/HomeView.vue'),
+        meta: { immersive: true },
       },
       ...jobSearchRoutes,
       ...interviewPrepRoutes,

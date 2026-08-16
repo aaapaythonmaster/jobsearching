@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+
+const route = useRoute()
+const isImmersive = computed(() => route.meta.immersive === true)
 </script>
 
 <template>
-  <div class="layout">
-    <header class="layout__header">
+  <div class="layout" :class="{ 'layout--immersive': isImmersive }">
+    <header v-if="!isImmersive" class="layout__header">
       <RouterLink to="/" class="layout__brand">
         <span class="layout__mark" aria-hidden="true"></span>
         <span>求职工作台</span>
@@ -16,7 +20,7 @@ import { RouterLink, RouterView } from 'vue-router'
         <RouterLink to="/job-search/statuses" active-class="is-active">状态</RouterLink>
       </nav>
     </header>
-    <main class="layout__main">
+    <main class="layout__main" :class="{ 'layout__main--immersive': isImmersive }">
       <RouterView />
     </main>
   </div>
@@ -34,6 +38,17 @@ import { RouterLink, RouterView } from 'vue-router'
     radial-gradient(circle at 82% 22%, fade(@color-primary, 12%), transparent 22%),
     linear-gradient(120deg, fade(#09070f, 98%), fade(#110b1d, 94%) 46%, fade(#09070f, 98%));
   isolation: isolate;
+
+  &--immersive {
+    min-height: 100dvh;
+    overflow: hidden;
+    background: #071116;
+
+    &::before,
+    &::after {
+      content: none;
+    }
+  }
 
   &::before {
     content: '';
@@ -134,6 +149,13 @@ import { RouterLink, RouterView } from 'vue-router'
     width: min(1220px, calc(100% - 48px));
     margin: 0 auto;
     padding: @space-xxl 0 56px;
+
+    &--immersive {
+      width: 100%;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 0;
+    }
   }
 }
 
@@ -153,6 +175,11 @@ import { RouterLink, RouterView } from 'vue-router'
     &__main {
       width: min(100% - 28px, 680px);
       padding-top: @space-xl;
+
+      &--immersive {
+        width: 100%;
+        padding: 0;
+      }
     }
   }
 }
