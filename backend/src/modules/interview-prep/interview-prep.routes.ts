@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { interviewPrepController } from './interview-prep.controller'
 
 export async function interviewPrepRoutes(app: FastifyInstance) {
+  app.get('/projects', interviewPrepController.listProjectOverviews)
   app.get('/projects/:jobPostId/summary', interviewPrepController.getProjectSummary)
   app.put('/projects/:jobPostId/resume-binding', interviewPrepController.bindResume)
   app.get('/projects/:jobPostId/questions', interviewPrepController.listQuestions)

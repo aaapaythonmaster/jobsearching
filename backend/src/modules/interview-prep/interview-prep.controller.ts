@@ -15,6 +15,11 @@ import {
 } from './interview-prep.schema'
 
 export const interviewPrepController = {
+  async listProjectOverviews(_req: FastifyRequest, reply: FastifyReply) {
+    const data = await interviewPrepService.listProjectOverviews()
+    return reply.send(success(data))
+  },
+
   async getProjectSummary(req: FastifyRequest, reply: FastifyReply) {
     const { jobPostId } = JobPostIdSchema.parse(req.params)
     const data = await interviewPrepService.getProjectSummary(jobPostId)

@@ -20,6 +20,14 @@ export const RoundLabelSchema = z.enum(['初面', '复面', '终面', 'HR 面', 
 export const IntroDurationSchema = z.enum(['2 分钟', '3 分钟', '5 分钟', '自定义'])
 export const FaqTypeSchema = z.enum(['summary', 'deep'])
 
+export const InterviewProjectOverviewSchema = z.object({
+  jobPostId: z.string(),
+  companyName: z.string(),
+  jobTitle: z.string(),
+  questionCount: z.number().int().nonnegative(),
+  latestQuestionAt: z.string().nullable(),
+})
+
 export const ResumeBindingUpsertSchema = z.object({
   resumeId: z.string().min(1),
 })
@@ -169,6 +177,7 @@ export type InterviewFaqDto = z.infer<typeof InterviewFaqSchema>
 export type InterviewQuestionCreateInput = z.infer<typeof InterviewQuestionCreateSchema>
 export type InterviewQuestionDto = z.infer<typeof InterviewQuestionSchema>
 export type InterviewQuestionUpdateInput = z.infer<typeof InterviewQuestionUpdateSchema>
+export type InterviewProjectOverviewDto = z.infer<typeof InterviewProjectOverviewSchema>
 export type ProjectSummaryDto = z.infer<typeof ProjectSummarySchema>
 export type ResumeBindingDto = z.infer<typeof ResumeBindingSchema>
 export type ResumeBindingUpsertInput = z.infer<typeof ResumeBindingUpsertSchema>

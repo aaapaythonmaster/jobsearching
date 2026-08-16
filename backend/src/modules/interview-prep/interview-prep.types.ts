@@ -53,6 +53,14 @@ export interface InterviewQuestionRow {
   updated_at: string | Date
 }
 
+export interface InterviewProjectOverviewRow {
+  job_post_id: string
+  company_name: string
+  job_title: string
+  question_count: number | string
+  latest_question_at: string | Date | null
+}
+
 export interface AnswerVersionRow {
   id: string
   question_id: string

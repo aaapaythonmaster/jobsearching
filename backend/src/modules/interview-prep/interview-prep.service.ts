@@ -11,6 +11,7 @@ import type {
   IntroGenerateInput,
   IntroVersionDto,
   InterviewFaqDto,
+  InterviewProjectOverviewDto,
   InterviewQuestionCreateInput,
   InterviewQuestionDto,
   InterviewQuestionUpdateInput,
@@ -22,6 +23,10 @@ import type {
 import type { JobPostLite, ResumeLite } from './interview-prep.types'
 
 export const interviewPrepService = {
+  async listProjectOverviews(): Promise<InterviewProjectOverviewDto[]> {
+    return interviewPrepRepository.listProjectOverviews()
+  },
+
   async getProjectSummary(jobPostId: string): Promise<ProjectSummaryDto> {
     const jobPost = await ensureJobPost(jobPostId)
     const [binding, resumeOptions, questions, intros, faqs] = await Promise.all([

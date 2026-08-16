@@ -7,6 +7,7 @@ import type {
   FaqSourceRow,
   InterviewFaq,
   InterviewFaqRow,
+  InterviewProjectOverviewRow,
   InterviewQuestion,
   InterviewQuestionRow,
   IntroVersion,
@@ -16,7 +17,12 @@ import type {
   ResumeBindingRow,
   ResumeLite,
 } from './interview-prep.types'
-import type { FaqItem, InterviewQuestionCreateInput, InterviewQuestionUpdateInput } from './interview-prep.schema'
+import type {
+  FaqItem,
+  InterviewProjectOverviewDto,
+  InterviewQuestionCreateInput,
+  InterviewQuestionUpdateInput,
+} from './interview-prep.schema'
 
 function iso(value: string | Date): string {
   return value instanceof Date ? value.toISOString() : value
@@ -92,6 +98,31 @@ function toFaq(row: InterviewFaqRow, sourceQuestionIds: string[] = []): Intervie
 }
 
 export const interviewPrepRepository = {
+  async listProjectOverviews(): Promise<InterviewProjectOverviewDto[]> {
+    const rows = await db.query<InterviewProjectOverviewRow>(
+      `SELECT
+         jobs.id AS job_post_id,
+         jobs.company_name,
+         jobs.job_title,
+         COUNT(questions.id) AS question_count,
+         MAX(questions.created_at) AS latest_question_at
+       FROM job_search_job_posts jobs
+       LEFT JOIN interview_prep_questions questions ON questions.job_post_id = jobs.id
+       GROUP BY jobs.id, jobs.company_name, jobs.job_title, jobs.created_at
+       ORDER BY
+         CASE WHEN MAX(questions.created_at) IS NULL THEN 1 ELSE 0 END,
+         MAX(questions.created_at) DESC,
+         jobs.created_at DESC`,
+    )
+    return rows.map((row) => ({
+      jobPostId: row.job_post_id,
+      companyName: row.company_name,
+      jobTitle: row.job_title,
+      questionCount: Number(row.question_count),
+      latestQuestionAt: row.latest_question_at === null ? null : iso(row.latest_question_at),
+    }))
+  },
+
   async findJobPostById(id: string): Promise<JobPostLite | null> {
     const row = await db.queryOne<{
       id: string
