@@ -18,6 +18,7 @@ const isImmersive = computed(() => route.meta.immersive === true)
         <RouterLink to="/job-search/resumes" active-class="is-active">简历</RouterLink>
         <RouterLink to="/job-search/analysis" active-class="is-active">分析</RouterLink>
         <RouterLink to="/job-search/statuses" active-class="is-active">状态</RouterLink>
+        <RouterLink to="/interviews" active-class="is-active">面试</RouterLink>
       </nav>
     </header>
     <main class="layout__main" :class="{ 'layout__main--immersive': isImmersive }">

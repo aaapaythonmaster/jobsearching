@@ -17,6 +17,11 @@ async function mountLayout(path: '/' | '/normal') {
             meta: { immersive: true },
           },
           { path: 'normal', component: { template: '<div>Normal</div>' } },
+          { path: 'job-search/jobs', component: { template: '<div>Jobs</div>' } },
+          { path: 'job-search/resumes', component: { template: '<div>Resumes</div>' } },
+          { path: 'job-search/analysis', component: { template: '<div>Analysis</div>' } },
+          { path: 'job-search/statuses', component: { template: '<div>Statuses</div>' } },
+          { path: 'interviews', component: { template: '<div>Interviews</div>' } },
         ],
       },
     ],
@@ -37,6 +42,8 @@ describe('DefaultLayout immersive mode', () => {
   it('keeps workspace chrome on normal routes', async () => {
     const wrapper = await mountLayout('/normal')
     expect(wrapper.get('.layout__header').text()).toContain('求职工作台')
+    expect(wrapper.get('.layout__header').text()).toContain('面试')
+    expect(wrapper.find('a[href="/interviews"]').exists()).toBe(true)
     expect(wrapper.get('.layout').classes()).not.toContain('layout--immersive')
     expect(wrapper.get('.layout__main').classes()).not.toContain('layout__main--immersive')
   })
