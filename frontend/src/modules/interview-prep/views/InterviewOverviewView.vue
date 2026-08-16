@@ -26,13 +26,24 @@ onMounted(async () => {
       <p>按岗位记录真实面试问题。</p>
     </header>
 
-    <div v-if="store.reviewError" class="interview-overview__state interview-overview__state--error">
+    <div
+      v-if="store.reviewError"
+      class="interview-overview__state interview-overview__state--error"
+    >
       <strong>面试记录加载失败</strong>
       <p>{{ store.reviewError }}</p>
     </div>
 
-    <div v-else-if="store.reviewLoading && store.projects.length === 0" class="interview-overview__grid">
-      <div v-for="index in 2" :key="index" class="interview-card interview-card--skeleton" aria-hidden="true">
+    <div
+      v-else-if="store.reviewLoading && store.projects.length === 0"
+      class="interview-overview__grid"
+    >
+      <div
+        v-for="index in 2"
+        :key="index"
+        class="interview-card interview-card--skeleton"
+        aria-hidden="true"
+      >
         <span />
         <span />
         <span />
@@ -42,7 +53,9 @@ onMounted(async () => {
     <div v-else-if="store.projects.length === 0" class="interview-overview__state">
       <h3>还没有岗位</h3>
       <p>添加岗位后，就可以按岗位记录面试问题。</p>
-      <RouterLink class="interview-overview__primary-link" to="/job-search/jobs">先添加岗位</RouterLink>
+      <RouterLink class="interview-overview__primary-link" to="/job-search/jobs"
+        >先添加岗位</RouterLink
+      >
     </div>
 
     <div v-else class="interview-overview__grid">

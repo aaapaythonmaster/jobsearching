@@ -49,10 +49,7 @@ async function saveQuestion() {
 
 onMounted(async () => {
   try {
-    await Promise.all([
-      store.loadReviewProjects(),
-      store.loadReviewQuestions(jobPostId.value),
-    ])
+    await Promise.all([store.loadReviewProjects(), store.loadReviewQuestions(jobPostId.value)])
   } catch {
     // The store exposes a contextual load error below.
   }
@@ -65,7 +62,10 @@ onMounted(async () => {
       返回面试复盘
     </RouterLink>
 
-    <div v-if="store.reviewError && !currentProject" class="question-review__state question-review__state--error">
+    <div
+      v-if="store.reviewError && !currentProject"
+      class="question-review__state question-review__state--error"
+    >
       <strong>岗位面试记录加载失败</strong>
       <p>{{ store.reviewError }}</p>
     </div>
@@ -133,17 +133,26 @@ onMounted(async () => {
             </div>
           </header>
 
-          <div v-if="store.reviewLoading && store.reviewQuestions.length === 0" class="question-history__state">
+          <div
+            v-if="store.reviewLoading && store.reviewQuestions.length === 0"
+            class="question-history__state"
+          >
             正在加载问题...
           </div>
           <div v-else-if="store.reviewQuestions.length === 0" class="question-history__state">
             还没有记录面试问题
           </div>
           <div v-else class="question-history__list">
-            <article v-for="question in store.reviewQuestions" :key="question.id" class="question-item">
+            <article
+              v-for="question in store.reviewQuestions"
+              :key="question.id"
+              class="question-item"
+            >
               <div class="question-item__meta">
                 <strong>{{ resolvedRound(question.roundLabel, question.customRound) }}</strong>
-                <time :datetime="question.createdAt">{{ dateFormatter.format(new Date(question.createdAt)) }}</time>
+                <time :datetime="question.createdAt">{{
+                  dateFormatter.format(new Date(question.createdAt))
+                }}</time>
               </div>
               <p>{{ question.questionText }}</p>
             </article>

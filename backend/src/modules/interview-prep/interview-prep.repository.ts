@@ -89,7 +89,9 @@ function toFaq(row: InterviewFaqRow, sourceQuestionIds: string[] = []): Intervie
     title: row.title,
     items: parsed.map((item) => ({
       ...item,
-      sourceQuestionIds: item.sourceQuestionIds?.length ? item.sourceQuestionIds : sourceQuestionIds,
+      sourceQuestionIds: item.sourceQuestionIds?.length
+        ? item.sourceQuestionIds
+        : sourceQuestionIds,
     })),
     modelName: row.model_name,
     promptVersion: row.prompt_version,
@@ -352,7 +354,10 @@ export const interviewPrepRepository = {
   },
 
   async findFaqById(id: string): Promise<InterviewFaq | null> {
-    const row = await db.queryOne<InterviewFaqRow>('SELECT * FROM interview_prep_faqs WHERE id = ?', [id])
+    const row = await db.queryOne<InterviewFaqRow>(
+      'SELECT * FROM interview_prep_faqs WHERE id = ?',
+      [id],
+    )
     if (!row) return null
     const sources = await this.listFaqSources([id])
     return toFaq(row, sources.get(id) ?? [])

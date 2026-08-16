@@ -69,7 +69,12 @@ export const interviewPrepService = {
     input: InterviewQuestionCreateInput,
   ): Promise<InterviewQuestionDto> {
     await ensureJobPost(jobPostId)
-    return interviewPrepRepository.createQuestion(nanoid(), jobPostId, normalizeQuestionInput(input), now())
+    return interviewPrepRepository.createQuestion(
+      nanoid(),
+      jobPostId,
+      normalizeQuestionInput(input),
+      now(),
+    )
   },
 
   async updateQuestion(
@@ -78,7 +83,11 @@ export const interviewPrepService = {
   ): Promise<InterviewQuestionDto> {
     const question = await interviewPrepRepository.findQuestionById(questionId)
     if (!question) throw NotFoundError('interview question')
-    const updated = await interviewPrepRepository.updateQuestion(questionId, normalizeQuestionInput(input), now())
+    const updated = await interviewPrepRepository.updateQuestion(
+      questionId,
+      normalizeQuestionInput(input),
+      now(),
+    )
     if (!updated) throw NotFoundError('interview question')
     return updated
   },
@@ -184,9 +193,14 @@ export const interviewPrepService = {
     input: SummaryFaqGenerateInput,
   ): Promise<InterviewFaqDto> {
     const jobPost = await ensureJobPost(jobPostId)
-    const resume = input.resumeId ? await ensureResume(input.resumeId) : await resolveOptionalResume(jobPostId)
-    const questions = await interviewPrepRepository.findQuestionsByIds([...new Set(input.questionIds)])
-    if (questions.length !== new Set(input.questionIds).size) throw NotFoundError('interview question')
+    const resume = input.resumeId
+      ? await ensureResume(input.resumeId)
+      : await resolveOptionalResume(jobPostId)
+    const questions = await interviewPrepRepository.findQuestionsByIds([
+      ...new Set(input.questionIds),
+    ])
+    if (questions.length !== new Set(input.questionIds).size)
+      throw NotFoundError('interview question')
     if (questions.some((question) => question.jobPostId !== jobPostId)) {
       throw BadRequestError('questions must belong to the same job post')
     }
@@ -204,7 +218,10 @@ export const interviewPrepService = {
         },
       ],
     })
-    const items = parseFaqItems(generated, questions.map((question) => question.id))
+    const items = parseFaqItems(
+      generated,
+      questions.map((question) => question.id),
+    )
     return interviewPrepRepository.createFaq({
       id: nanoid(),
       jobPostId,
@@ -221,7 +238,9 @@ export const interviewPrepService = {
 
   async generateDeepFaq(jobPostId: string, input: DeepFaqGenerateInput): Promise<InterviewFaqDto> {
     const jobPost = await ensureJobPost(jobPostId)
-    const resume = input.resumeId ? await ensureResume(input.resumeId) : await resolveResume(jobPostId)
+    const resume = input.resumeId
+      ? await ensureResume(input.resumeId)
+      : await resolveResume(jobPostId)
     const generated = await generateText({
       temperature: 0.3,
       messages: [
@@ -275,12 +294,12 @@ async function resolveOptionalResume(jobPostId: string): Promise<ResumeLite | nu
   return binding ? ensureResume(binding.resumeId) : null
 }
 
-function normalizeQuestionInput<T extends InterviewQuestionCreateInput | InterviewQuestionUpdateInput>(
-  input: T,
-): T {
+function normalizeQuestionInput<
+  T extends InterviewQuestionCreateInput | InterviewQuestionUpdateInput,
+>(input: T): T {
   return {
     ...input,
-    customRound: input.roundLabel === '其他' ? input.customRound ?? null : null,
+    customRound: input.roundLabel === '其他' ? (input.customRound ?? null) : null,
   }
 }
 
@@ -295,7 +314,8 @@ function buildAnswerReviewPrompt(
 ): string {
   return JSON.stringify({
     output: {
-      analysis: '如果有用户回答，分析优点、问题、改进建议；如果没有回答，说明暂无用户回答并给答题建议。',
+      analysis:
+        '如果有用户回答，分析优点、问题、改进建议；如果没有回答，说明暂无用户回答并给答题建议。',
       referenceAnswer: '给出详细中文参考回答',
     },
     job: jobPost,
@@ -304,9 +324,16 @@ function buildAnswerReviewPrompt(
   })
 }
 
-function buildIntroPrompt(jobPost: JobPostLite, resume: ResumeLite, input: IntroGenerateInput): string {
+function buildIntroPrompt(
+  jobPost: JobPostLite,
+  resume: ResumeLite,
+  input: IntroGenerateInput,
+): string {
   return JSON.stringify({
-    duration: input.durationLabel === '自定义' ? `${input.customDurationMinutes ?? 3} 分钟` : input.durationLabel,
+    duration:
+      input.durationLabel === '自定义'
+        ? `${input.customDurationMinutes ?? 3} 分钟`
+        : input.durationLabel,
     job: jobPost,
     resume,
     rules: ['中文输出', '结构自然', '突出 JD 匹配点', '不编造经历', '只输出自我介绍正文'],
@@ -372,7 +399,9 @@ function parseFaqItems(raw: string, fallbackQuestionIds: string[]): FaqItem[] {
       scenario: text(item.scenario),
       answerApproach: text(item.answerApproach),
       referenceAnswer: text(item.referenceAnswer),
-      sourceQuestionIds: Array.isArray(item.sourceQuestionIds) ? item.sourceQuestionIds : fallbackQuestionIds,
+      sourceQuestionIds: Array.isArray(item.sourceQuestionIds)
+        ? item.sourceQuestionIds
+        : fallbackQuestionIds,
     }))
     .filter((item) => item.question && item.referenceAnswer)
   if (normalized.length > 0) return normalized
@@ -388,7 +417,11 @@ function parseFaqItems(raw: string, fallbackQuestionIds: string[]): FaqItem[] {
 }
 
 function tryJson(raw: string): unknown | null {
-  const cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim()
+  const cleaned = raw
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```$/i, '')
+    .trim()
   try {
     return JSON.parse(cleaned)
   } catch {
