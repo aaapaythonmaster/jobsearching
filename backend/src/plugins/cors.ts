@@ -1,9 +1,10 @@
 import fp from 'fastify-plugin'
 import cors from '@fastify/cors'
+import { env } from '@/config/env'
 
 export default fp(async (app) => {
   await app.register(cors, {
-    origin: true,
+    origin: env.CORS_ORIGIN ?? true,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   })

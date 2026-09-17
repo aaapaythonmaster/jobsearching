@@ -11,6 +11,7 @@ const EnvSchema = z
     PORT: z.coerce.number().int().positive().default(3000),
     HOST: z.string().default('0.0.0.0'),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+    CORS_ORIGIN: z.string().url().optional(),
 
     DB_DIALECT: z.enum(['sqlite', 'postgres']).default('sqlite'),
     DB_SQLITE_FILE: z.string().default('./data/dev.db'),
