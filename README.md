@@ -122,17 +122,38 @@ npm run lint
 - `backend/data/` 已被 git 忽略，不会提交个人数据、数据库文件或上传文件。
 - `.env` 已被 git 忽略，不要提交真实 API Key。
 
-## Render 免费部署
+## 免费公网部署（Supabase + Render + Vercel）
 
-仓库根目录的 `render.yaml` 会创建 Vue 静态站点、Fastify Web Service 和 PostgreSQL：
+本项目使用 **Vercel 托管前端、Render 托管 API、Supabase 托管 PostgreSQL**。首次上线会创建一个空数据库；本地 SQLite 数据和 `backend/data/` 中的个人文件不会上传。
 
-1. 登录 Render，选择 **New > Blueprint**。
-2. 连接 GitHub 仓库 `aaapaythonmaster/jobsearching`。
-3. Render 读取根目录 `render.yaml` 后，填写后端的 `AI_API_KEY`。
-4. 创建 Blueprint，等待数据库、API 和前端依次完成部署。
-5. 访问前端地址，并打开后端 `/health` 检查数据库连接。
+### 1. 创建 Supabase 数据库
 
-免费 Web Service 会在闲置后休眠，首次请求可能需要等待。免费 PostgreSQL 会在 30 天后到期；本方案仅用于预览，长期使用请升级或迁移数据库。
+1. 在 Supabase 创建一个免费项目，并保存数据库连接串。
+2. 不要把连接串或 Supabase 密钥写入前端；它只应作为 Render 的 `DATABASE_URL`。
+
+### 2. 部署 Render API
+
+1. 在 Render 选择 **New > Blueprint**，连接 GitHub 仓库。
+2. Render 会读取根目录的 `render.yaml`，仅创建 Fastify API 服务。
+3. 在服务的环境变量中填写下列私密值：
+   - `DATABASE_URL`：Supabase PostgreSQL 连接串。
+   - `AI_API_KEY`：智谱 API 密钥。
+   - `CORS_ORIGIN`：完成 Vercel 部署后填入完整前端地址，例如 `https://your-project.vercel.app`。
+4. 等待构建完成；构建过程会运行 `npm run db:migrate`，为空数据库创建表结构。
+5. 访问 `https://<你的-render-服务>.onrender.com/health`，确认 API 和数据库可用。
+
+### 3. 部署 Vercel 前端
+
+1. 在 Vercel 导入同一个 GitHub 仓库。
+2. 将 **Root Directory** 设为 `frontend`；Vercel 会自动识别 Vite，构建输出为 `dist`。
+3. 添加环境变量 `VITE_API_BASE_URL`，值为 `https://<你的-render-服务>.onrender.com/api`。
+4. 部署完成后，将生成的 Vercel 地址填回 Render 的 `CORS_ORIGIN` 并重新部署 API。
+
+### 上线验收与免费额度说明
+
+打开 Vercel 地址后，创建一条求职记录并刷新页面；数据应保留在 Supabase。`AI_API_KEY`、数据库连接串和其他私密变量只保存在 Render，绝不放在 Git 或 Vercel 前端变量中。
+
+Render 免费 Web Service 闲置约 15 分钟后会休眠，首次唤醒通常需要等待约一分钟；Supabase 免费项目长时间无活动后可能暂停，访问控制台后可恢复。这套组合适合个人预览和使用，不产生固定月费。
 
 ## 项目结构
 
