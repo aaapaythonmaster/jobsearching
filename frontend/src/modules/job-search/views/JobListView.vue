@@ -25,7 +25,7 @@ const queue = useJobImageQueue({
 
 const statusName = computed(() => {
   const map = new Map(store.statuses.map((item) => [item.id, item.name]))
-  return (id: string | null) => (id ? map.get(id) ?? '未知状态' : '未设置')
+  return (id: string | null) => (id ? (map.get(id) ?? '未知状态') : '未设置')
 })
 
 onMounted(async () => {
@@ -86,6 +86,10 @@ async function removeJob(id: string) {
   if (!window.confirm('确认删除这个岗位吗？')) return
   await store.removeJob(id)
 }
+
+function scrollToCreate(): void {
+  document.querySelector<HTMLElement>('.job-create')?.scrollIntoView({ behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -95,11 +99,12 @@ async function removeJob(id: string) {
         <h2>岗位 JD</h2>
         <p>批量识别岗位截图，逐条检查后保存并记录进展。</p>
       </div>
+      <BaseButton class="job-page__add" size="sm" @click="scrollToCreate"> 新增岗位 </BaseButton>
     </header>
 
-    <section class="panel job-create">
+    <section class="panel job-create" aria-labelledby="job-create-title">
       <header class="job-create__header">
-        <h3>新增岗位</h3>
+        <h3 id="job-create-title">新增岗位</h3>
         <p>每张截图对应一个岗位；单次最多 10 张，同时识别 2 张。</p>
       </header>
       <p v-if="uploadError" class="job-create__error">{{ uploadError }}</p>
@@ -116,7 +121,9 @@ async function removeJob(id: string) {
         <JobDraftReview
           :task="queue.activeTask.value"
           :statuses="store.statuses"
-          @update:draft="(draft) => queue.activeTask.value && queue.updateDraft(queue.activeTask.value.id, draft)"
+          @update:draft="
+            (draft) => queue.activeTask.value && queue.updateDraft(queue.activeTask.value.id, draft)
+          "
           @save="saveDraft"
           @skip="queue.selectNextReady"
           @retry="queue.retryTask"
@@ -149,7 +156,10 @@ async function removeJob(id: string) {
             <p>{{ statusName(job.statusId) }} · {{ job.salaryRange || '薪资未填' }}</p>
           </div>
           <div class="job-card__actions">
-            <BaseButton size="sm" @click="router.push({ name: 'job-search-job-detail', params: { id: job.id } })">
+            <BaseButton
+              size="sm"
+              @click="router.push({ name: 'job-search-job-detail', params: { id: job.id } })"
+            >
               查看
             </BaseButton>
             <BaseButton size="sm" variant="danger" @click="removeJob(job.id)">删除</BaseButton>
@@ -171,6 +181,18 @@ async function removeJob(id: string) {
     margin-bottom: @space-xs;
   }
 
+  &__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: @space-lg;
+  }
+
+  &__add {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   &__header p {
     color: @color-text-secondary;
   }
@@ -185,10 +207,8 @@ async function removeJob(id: string) {
 }
 
 .panel {
-  background: @color-bg-elevated;
-  border: 1px solid @color-border;
-  border-radius: @radius-md;
-  padding: @space-lg;
+  .glass-surface();
+  padding: @space-xl;
 
   h3 {
     font-size: @font-size-lg;
@@ -198,7 +218,7 @@ async function removeJob(id: string) {
 .job-create {
   display: flex;
   flex-direction: column;
-  gap: @space-md;
+  gap: @space-lg;
 
   &__header p {
     margin-top: @space-xs;

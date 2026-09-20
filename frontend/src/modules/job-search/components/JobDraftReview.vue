@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/BaseButton/index.vue'
-import BaseEmpty from '@/components/BaseEmpty/index.vue'
 import BaseInput from '@/components/BaseInput/index.vue'
 import { createEmptyJobDraft } from '../composables/useJobImageQueue'
 import type { ApplicationStatus, JobImageTask, JobPostCreateInput } from '../types'
@@ -55,7 +54,10 @@ function submit() {
 
 <template>
   <section class="draft-review" aria-label="岗位审核">
-    <BaseEmpty v-if="!task" description="上传截图后，在左侧选择待确认岗位" />
+    <div v-if="!task" class="draft-review__empty">
+      <strong>等待选择岗位截图</strong>
+      <p>上传后，在左侧任务列表中选择要审核的岗位。</p>
+    </div>
 
     <template v-else-if="task.status === 'queued' || task.status === 'extracting'">
       <div class="draft-review__state">
@@ -82,15 +84,40 @@ function submit() {
       </header>
 
       <div class="draft-review__row">
-        <label>公司<BaseInput v-model="draft.companyName" placeholder="公司名称" :disabled="task.status === 'saving'" /></label>
-        <label>岗位<BaseInput v-model="draft.jobTitle" placeholder="岗位名称" :disabled="task.status === 'saving'" /></label>
+        <label
+          >公司<BaseInput
+            v-model="draft.companyName"
+            placeholder="公司名称"
+            :disabled="task.status === 'saving'"
+        /></label>
+        <label
+          >岗位<BaseInput
+            v-model="draft.jobTitle"
+            placeholder="岗位名称"
+            :disabled="task.status === 'saving'"
+        /></label>
       </div>
       <div class="draft-review__row">
-        <label>方向<BaseInput v-model="draft.jobDirection" placeholder="例如 AI产品" :disabled="task.status === 'saving'" /></label>
-        <label>城市<BaseInput v-model="draft.city" placeholder="城市" :disabled="task.status === 'saving'" /></label>
+        <label
+          >方向<BaseInput
+            v-model="draft.jobDirection"
+            placeholder="例如 AI产品"
+            :disabled="task.status === 'saving'"
+        /></label>
+        <label
+          >城市<BaseInput
+            v-model="draft.city"
+            placeholder="城市"
+            :disabled="task.status === 'saving'"
+        /></label>
       </div>
       <div class="draft-review__row">
-        <label>薪资<BaseInput v-model="draft.salaryRange" placeholder="20-30K" :disabled="task.status === 'saving'" /></label>
+        <label
+          >薪资<BaseInput
+            v-model="draft.salaryRange"
+            placeholder="20-30K"
+            :disabled="task.status === 'saving'"
+        /></label>
         <label>
           状态
           <select v-model="draft.statusId" :disabled="task.status === 'saving'">
@@ -116,14 +143,28 @@ function submit() {
       </p>
 
       <div class="draft-review__actions">
-        <BaseButton type="button" variant="danger" :disabled="task.status === 'saving'" @click="emit('remove', task.id)">
+        <BaseButton
+          type="button"
+          variant="danger"
+          :disabled="task.status === 'saving'"
+          @click="emit('remove', task.id)"
+        >
           移除此项
         </BaseButton>
         <span class="draft-review__actions-end">
-          <BaseButton type="button" variant="secondary" :disabled="task.status === 'saving'" @click="emit('skip')">
+          <BaseButton
+            type="button"
+            variant="secondary"
+            :disabled="task.status === 'saving'"
+            @click="emit('skip')"
+          >
             跳过
           </BaseButton>
-          <BaseButton data-testid="save-job-draft" type="submit" :loading="task.status === 'saving'">
+          <BaseButton
+            data-testid="save-job-draft"
+            type="submit"
+            :loading="task.status === 'saving'"
+          >
             确认并保存
           </BaseButton>
         </span>
@@ -135,6 +176,23 @@ function submit() {
 <style lang="less" scoped>
 .draft-review {
   min-width: 0;
+
+  &__empty {
+    display: grid;
+    min-height: 160px;
+    place-content: center;
+    gap: 6px;
+    border: 1px dashed @color-border-strong;
+    border-radius: @radius-md;
+    color: @color-text-secondary;
+    text-align: center;
+
+    p {
+      margin: 0;
+      color: @color-text-disabled;
+      font-size: @font-size-sm;
+    }
+  }
 
   &__state {
     display: flex;

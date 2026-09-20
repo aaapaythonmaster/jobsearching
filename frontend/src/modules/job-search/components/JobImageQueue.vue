@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import BaseButton from '@/components/BaseButton/index.vue'
-import BaseEmpty from '@/components/BaseEmpty/index.vue'
 import type { JobImageTask, JobImageTaskStatus } from '../types'
 
 defineProps<{
@@ -55,7 +54,7 @@ function onFiles(event: Event) {
       {{ tasks.length }} 个待处理任务<span v-if="processing"> · 正在识别</span>
     </p>
 
-    <BaseEmpty v-if="tasks.length === 0" description="尚未选择岗位截图" />
+    <p v-if="tasks.length === 0" class="image-queue__empty">选择截图后，任务会显示在这里</p>
     <ul v-else class="image-queue__list">
       <li
         v-for="task in tasks"
@@ -116,6 +115,16 @@ function onFiles(event: Event) {
     display: flex;
     flex-direction: column;
     gap: @space-sm;
+  }
+
+  &__empty {
+    margin: 0;
+    padding: 18px 12px;
+    border: 1px dashed @color-border-strong;
+    border-radius: @radius-md;
+    color: @color-text-disabled;
+    font-size: @font-size-sm;
+    text-align: center;
   }
 }
 

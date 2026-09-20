@@ -2,15 +2,15 @@
   display: inline-flex;
   align-items: center;
   width: 100%;
-  background-color: @color-bg;
+  background-color: rgba(255, 255, 255, 0.62);
   border: 1px solid @color-border-strong;
-  border-radius: @radius-md;
-  backdrop-filter: blur(18px);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 2px rgba(46, 80, 99, 0.03);
   transition: border-color @transition-fast, box-shadow @transition-fast, background-color @transition-fast;
 
   &:focus-within {
     border-color: @color-primary;
-    background-color: fade(@color-primary, 8%);
+    background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 0 3px fade(@color-primary, 18%);
   }
 
@@ -23,7 +23,7 @@
   }
 
   &--disabled {
-    background-color: fade(#ffffff, 3%);
+    background-color: rgba(223, 235, 239, 0.55);
     color: @color-text-disabled;
     cursor: not-allowed;
   }

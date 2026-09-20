@@ -1,4 +1,4 @@
-export { jobSearchRoutes } from './routes'
+export { jobSearchRoutes, jobWorkspaceView } from './routes'
 export { useJobSearchStore } from './store'
 export type {
   ApplicationStatus,

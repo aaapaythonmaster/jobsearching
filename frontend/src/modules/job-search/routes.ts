@@ -1,10 +1,12 @@
 import type { RouteRecordRaw } from 'vue-router'
 
+export const jobWorkspaceView = () => import('./views/JobListView.vue')
+
 export const jobSearchRoutes: RouteRecordRaw[] = [
   {
     path: 'job-search/jobs',
     name: 'job-search-jobs',
-    component: () => import('./views/JobListView.vue'),
+    component: jobWorkspaceView,
   },
   {
     path: 'job-search/jobs/:id',

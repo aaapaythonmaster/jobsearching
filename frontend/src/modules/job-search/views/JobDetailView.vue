@@ -306,9 +306,7 @@ async function copyTailoredResume(result: TailoredResume) {
 }
 
 .panel {
-  background: @color-bg-elevated;
-  border: 1px solid @color-border;
-  border-radius: @radius-md;
+  .glass-surface();
   padding: @space-lg;
   display: flex;
   flex-direction: column;

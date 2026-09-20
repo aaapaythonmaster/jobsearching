@@ -2,7 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 import { interviewPrepRoutes } from '@/modules/interview-prep'
-import { jobSearchRoutes } from '@/modules/job-search'
+import { jobSearchRoutes, jobWorkspaceView } from '@/modules/job-search'
 import { todoRoutes } from '@/modules/todo'
 
 export const routes: RouteRecordRaw[] = [
@@ -13,8 +13,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'home',
-        component: () => import('@/views/HomeView.vue'),
-        meta: { immersive: true },
+        component: jobWorkspaceView,
       },
       ...jobSearchRoutes,
       ...interviewPrepRoutes,

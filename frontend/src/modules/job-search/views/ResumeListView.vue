@@ -87,9 +87,16 @@ async function removeResume(id: string) {
     </header>
 
     <div class="resume-page__grid">
-      <form class="panel" @submit.prevent="upload">
+      <form class="panel resume-upload" @submit.prevent="upload">
         <h3>上传简历</h3>
-        <input type="file" accept=".pdf,.docx,application/pdf" @change="onFileChange" />
+        <label class="resume-upload__trigger" aria-label="上传简历" title="选择简历文件">
+          <input type="file" accept=".pdf,.docx,application/pdf" @change="onFileChange" />
+          <svg class="resume-upload__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 16V4" />
+            <path d="m7 9 5-5 5 5" />
+            <path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+          </svg>
+        </label>
         <label>名称<BaseInput v-model="uploadForm.name" placeholder="默认使用文件名" /></label>
         <label>目标方向<BaseInput v-model="uploadForm.targetRole" placeholder="例如 AI产品经理" /></label>
         <label>备注<textarea v-model="uploadForm.notes" rows="3" /></label>
@@ -177,9 +184,7 @@ async function removeResume(id: string) {
 }
 
 .panel {
-  background: @color-bg-elevated;
-  border: 1px solid @color-border;
-  border-radius: @radius-md;
+  .glass-surface();
   padding: @space-lg;
   display: flex;
   flex-direction: column;
@@ -198,7 +203,6 @@ async function removeResume(id: string) {
   }
 }
 
-input[type='file'],
 textarea {
   width: 100%;
   border: 1px solid @color-border-strong;
@@ -207,6 +211,45 @@ textarea {
   background: @color-bg;
   color: @color-text;
   font: inherit;
+}
+
+.resume-upload__trigger {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed @color-border-strong;
+  border-radius: @radius-lg;
+  color: @color-primary;
+  cursor: pointer;
+  transition:
+    border-color @transition-fast,
+    background-color @transition-fast,
+    transform @transition-fast;
+
+  &:hover {
+    border-color: @color-primary;
+    background: fade(@color-primary, 8%);
+    transform: translateY(-1px);
+  }
+
+  &:focus-within {
+    outline: 3px solid fade(@color-primary, 22%);
+    outline-offset: 3px;
+  }
+
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.resume-upload__icon {
+  width: 34px;
+  height: 34px;
 }
 
 textarea {

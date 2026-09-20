@@ -115,7 +115,7 @@ onMounted(async () => {
     padding: @space-xxl;
     border: 1px solid @color-border;
     border-radius: @radius-md;
-    background: @color-bg-elevated;
+    .glass-surface();
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -165,7 +165,7 @@ onMounted(async () => {
 
   &__primary-link {
     margin-top: @space-sm;
-    background: linear-gradient(135deg, @color-primary-hover, @color-primary);
+    background: linear-gradient(180deg, @color-primary, @color-primary-hover);
     color: @color-text-inverse;
     box-shadow: @shadow-sm;
   }
@@ -176,7 +176,7 @@ onMounted(async () => {
   padding: @space-xl;
   border: 1px solid @color-border;
   border-radius: @radius-md;
-  background: @color-bg-elevated;
+  .glass-surface();
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -215,7 +215,7 @@ onMounted(async () => {
 
   &__action {
     align-self: flex-end;
-    background: linear-gradient(135deg, @color-primary-hover, @color-primary);
+    background: linear-gradient(180deg, @color-primary, @color-primary-hover);
     color: @color-text-inverse;
   }
 

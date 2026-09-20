@@ -18,21 +18,21 @@ body,
 
 body {
   font-family:
-    'Avenir Next',
-    'SF Pro Display',
-    'PingFang SC',
-    'Microsoft YaHei',
     -apple-system,
     BlinkMacSystemFont,
+    'SF Pro Text',
+    'PingFang SC',
+    'Microsoft YaHei',
     'Segoe UI',
     sans-serif;
   font-size: @font-size-md;
   line-height: @line-height-base;
   color: @color-text;
   background-color: @color-bg-muted;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  scrollbar-color: fade(@color-primary, 52%) rgba(255, 255, 255, 0.05);
+  scrollbar-color: fade(@color-primary, 42%) transparent;
 }
 
 ::selection {
@@ -74,9 +74,24 @@ input,
 textarea,
 select {
   font: inherit;
+  caret-color: @color-primary;
+}
+
+select option {
+  color: @color-text;
+  background: #f8fcfd;
 }
 
 *:focus-visible {
   outline: 2px solid fade(@color-primary, 90%);
   outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

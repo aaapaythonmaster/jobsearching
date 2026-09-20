@@ -213,7 +213,7 @@ onMounted(async () => {
     padding: @space-xxl;
     border: 1px solid @color-border;
     border-radius: @radius-md;
-    background: @color-bg-elevated;
+    .glass-surface();
     display: flex;
     justify-content: center;
     flex-direction: column;
@@ -235,7 +235,7 @@ onMounted(async () => {
 .question-history {
   border: 1px solid @color-border;
   border-radius: @radius-md;
-  background: @color-bg-elevated;
+  .glass-surface();
 }
 
 .question-form {

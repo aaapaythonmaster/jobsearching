@@ -69,9 +69,7 @@ onMounted(load)
   }
 
   &__card {
-    background-color: @color-bg-elevated;
-    border: 1px solid @color-border;
-    border-radius: @radius-md;
+    .glass-surface();
     padding: @space-xl;
 
     h2 {
