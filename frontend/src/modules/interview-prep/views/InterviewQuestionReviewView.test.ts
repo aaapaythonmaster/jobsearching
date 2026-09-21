@@ -57,6 +57,7 @@ describe('InterviewQuestionReviewView', () => {
       questionText: '如何优化首屏性能？',
     })
     expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('')
+    expect(wrapper.find('[aria-label="记录问题"]').exists()).toBe(true)
   })
 
   it('keeps the question text when saving fails', async () => {

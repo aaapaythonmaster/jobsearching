@@ -87,6 +87,7 @@ async function removeResume(id: string) {
     </header>
 
     <div class="resume-page__grid">
+      <aside class="resume-page__list" aria-label="简历列表">
       <form class="panel resume-upload" @submit.prevent="upload">
         <h3>上传简历</h3>
         <label class="resume-upload__trigger" aria-label="上传简历" title="选择简历文件">
@@ -103,7 +104,7 @@ async function removeResume(id: string) {
         <BaseButton type="submit" :disabled="!selectedFile" :loading="store.loading">上传并提取</BaseButton>
       </form>
 
-      <div class="panel">
+      <div class="panel resume-page__collection">
         <div class="resume-page__filters">
           <BaseInput v-model="keyword" placeholder="搜索简历" @enter="search" />
           <BaseInput v-model="targetRole" placeholder="目标方向" @enter="search" />
@@ -126,21 +127,31 @@ async function removeResume(id: string) {
           </article>
         </div>
       </div>
-    </div>
+      </aside>
 
-    <form v-if="editing" class="panel" @submit.prevent="saveEdit">
-      <h3>编辑简历文本</h3>
-      <div class="resume-page__row">
-        <label>名称<BaseInput v-model="editForm.name" /></label>
-        <label>目标方向<BaseInput v-model="editForm.targetRole" /></label>
-      </div>
-      <label>修正后的简历正文<textarea v-model="editForm.contentText" rows="16" /></label>
-      <label>备注<textarea v-model="editForm.notes" rows="3" /></label>
-      <div class="resume-page__actions">
-        <BaseButton type="submit" :loading="store.loading">保存修改</BaseButton>
-        <BaseButton variant="ghost" @click="editing = null">取消</BaseButton>
-      </div>
-    </form>
+      <section class="panel resume-page__editor" aria-label="简历编辑">
+        <template v-if="editing">
+          <h3>编辑简历文本</h3>
+          <form @submit.prevent="saveEdit">
+            <div class="resume-page__row">
+              <label>名称<BaseInput v-model="editForm.name" /></label>
+              <label>目标方向<BaseInput v-model="editForm.targetRole" /></label>
+            </div>
+            <label>修正后的简历正文<textarea v-model="editForm.contentText" rows="16" /></label>
+            <label>备注<textarea v-model="editForm.notes" rows="3" /></label>
+            <div class="resume-page__actions">
+              <BaseButton type="submit" :loading="store.loading">保存修改</BaseButton>
+              <BaseButton type="button" variant="ghost" @click="editing = null">取消</BaseButton>
+            </div>
+          </form>
+        </template>
+        <div v-else class="resume-page__editor-empty">
+          <span class="resume-page__editor-kicker">编辑工作区</span>
+          <h3>选择一份简历</h3>
+          <p>从左侧列表选择简历后，在这里修正正文和备注。</p>
+        </div>
+      </section>
+    </div>
   </section>
 </template>
 
@@ -161,8 +172,43 @@ async function removeResume(id: string) {
 
   &__grid {
     display: grid;
-    grid-template-columns: minmax(300px, 380px) 1fr;
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
     gap: @space-lg;
+  }
+
+  &__list {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: @space-lg;
+  }
+
+  &__editor {
+    min-width: 0;
+    min-height: 520px;
+  }
+
+  &__editor-empty {
+    display: flex;
+    min-height: 470px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: @space-xl;
+    color: @color-text-secondary;
+  }
+
+  &__editor-empty h3 {
+    margin-top: @space-sm;
+    color: @color-text;
+    font-size: @font-size-xl;
+  }
+
+  &__editor-kicker {
+    color: @color-primary;
+    font-size: @font-size-sm;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   &__filters,
@@ -184,7 +230,7 @@ async function removeResume(id: string) {
 }
 
 .panel {
-  .glass-surface();
+  .workspace-surface();
   padding: @space-lg;
   display: flex;
   flex-direction: column;

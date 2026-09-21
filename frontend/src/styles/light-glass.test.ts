@@ -25,15 +25,19 @@ function rgb(value: string) {
   return channels.slice(0, 3).map((channel) => channel * alpha + 255 * (1 - alpha))
 }
 
-describe('light workspace readability', () => {
-  it('keeps reading text legible and panels light on the shared daylight backdrop', async () => {
+describe('calm workspace readability', () => {
+  it('keeps reading text legible and functional surfaces opaque on the daylight canvas', async () => {
     const tokens = readFileSync('src/styles/variables.less', 'utf8')
-    const { css } = await less.render(`${tokens}\n.sample { color: @color-text; border-color: @color-text-secondary; background: @color-bg-elevated; }`)
+    const mixins = readFileSync('src/styles/mixins.less', 'utf8')
+    const { css } = await less.render(
+      `${tokens}\n${mixins}\n.sample { .workspace-surface(); color: @color-text; }`,
+    )
     const foreground = css.match(/\n  color: ([^;]+);/)![1]!
-    const secondary = css.match(/border-color: ([^;]+);/)![1]!
-    const surface = css.match(/background: ([^;]+);/)![1]!
+    const border = css.match(/\n  border: ([^;]+);/)![1]!
+    const surface = css.match(/\n  background: ([^;]+);/)![1]!
     expect(1.05 / (luminance(rgb(foreground)) + 0.05)).toBeGreaterThanOrEqual(4.5)
-    expect(1.05 / (luminance(rgb(secondary)) + 0.05)).toBeGreaterThanOrEqual(4.5)
+    expect(border).toContain('rgba(56, 93, 111, 0.14)')
     expect(luminance(rgb(surface))).toBeGreaterThan(0.85)
+    expect(css).toContain('border-radius: 16px')
   })
 })

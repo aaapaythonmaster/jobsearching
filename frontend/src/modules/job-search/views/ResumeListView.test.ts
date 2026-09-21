@@ -47,4 +47,18 @@ describe('ResumeListView upload entry', () => {
       notes: undefined,
     })
   })
+
+  it('separates the resume collection from the empty editor state', () => {
+    const wrapper = mount(ResumeListView, {
+      global: {
+        stubs: {
+          BaseButton: { template: '<button><slot /></button>' },
+          BaseEmpty: { template: '<div />' },
+          BaseInput: { template: '<input />' },
+        },
+      },
+    })
+    expect(wrapper.find('[aria-label="简历列表"]').exists()).toBe(true)
+    expect(wrapper.get('[aria-label="简历编辑"]').text()).toContain('选择一份简历')
+  })
 })

@@ -40,6 +40,8 @@ describe('InterviewOverviewView', () => {
     expect(wrapper.text()).toContain('星海科技')
     expect(wrapper.text()).toContain('前端工程师')
     expect(wrapper.text()).toContain('3 个问题')
+    expect(wrapper.find('[aria-label="面试准备概览"]').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="面试项目列表"]').findAll('article')).toHaveLength(1)
   })
 
   it('guides an empty workspace to add a job', async () => {

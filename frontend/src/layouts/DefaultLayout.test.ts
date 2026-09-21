@@ -3,7 +3,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import DefaultLayout from './DefaultLayout.vue'
 
-async function mountLayout(path: '/' | '/normal') {
+async function mountLayout(path: '/' | '/normal' | '/job-search/resumes') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -73,6 +73,13 @@ describe('continuous landing and workspace', () => {
     expect(wrapper.find('.layout__sidebar').exists()).toBe(true)
     expect(wrapper.find('.layout__content').exists()).toBe(true)
     expect(wrapper.find('.layout__header').exists()).toBe(false)
+  })
+
+  it('labels the active workspace context on deep links', async () => {
+    const wrapper = await mountLayout('/job-search/resumes')
+    expect(wrapper.get('.layout__context-title').text()).toBe('简历')
+    expect(wrapper.get('.layout__context').attributes('aria-label')).toBe('当前工作区：简历')
+    wrapper.unmount()
   })
 
   it.each([false, true])(

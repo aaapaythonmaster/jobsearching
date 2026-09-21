@@ -113,4 +113,10 @@ describe('JobListView batch screenshot flow', () => {
     await vi.waitFor(() => expect(mocks.createJob).toHaveBeenCalledTimes(1))
     expect(router.currentRoute.value.name).toBe('job-search-job-list')
   })
+
+  it('exposes separate action and filter regions for the job workspace', async () => {
+    const { wrapper } = await mountPage()
+    expect(wrapper.get('[aria-label="岗位操作"]').text()).toContain('新增岗位')
+    expect(wrapper.get('[aria-label="岗位筛选"] input').attributes('placeholder')).toContain('搜索')
+  })
 })

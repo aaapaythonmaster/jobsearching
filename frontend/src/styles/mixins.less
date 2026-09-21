@@ -22,6 +22,41 @@
   }
 }
 
+.workspace-surface() {
+  background: @color-workspace-surface;
+  border: 1px solid @color-border;
+  border-radius: @radius-lg;
+}
+
+.workspace-floating-surface() {
+  .workspace-surface();
+  box-shadow: @shadow-sm;
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
+}
+
+.workspace-page-heading() {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: @space-lg;
+  padding-bottom: @space-lg;
+  border-bottom: 1px solid @color-border;
+}
+
+.workspace-status-chip() {
+  display: inline-flex;
+  align-items: center;
+  gap: @space-xs;
+  min-height: 28px;
+  padding: 0 @space-sm;
+  border: 1px solid @color-border;
+  border-radius: @radius-sm;
+  background: @color-workspace-subtle;
+  color: @color-text-secondary;
+  font-size: @font-size-sm;
+}
+
 .flex-between() {
   display: flex;
   align-items: center;

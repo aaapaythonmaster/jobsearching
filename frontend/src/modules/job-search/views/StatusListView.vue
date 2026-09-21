@@ -74,8 +74,13 @@ async function remove(id: string) {
         <div v-if="store.error" class="state state--error">{{ store.error }}</div>
         <div v-else-if="store.loading && store.statuses.length === 0" class="state">加载中...</div>
         <BaseEmpty v-else-if="store.statuses.length === 0" description="暂无状态" />
-        <div v-else class="status-list">
-          <article v-for="status in store.statuses" :key="status.id" class="status-card">
+        <div v-else class="status-list" aria-label="求职阶段列表">
+          <article
+            v-for="status in store.statuses"
+            :key="status.id"
+            class="status-card"
+            :data-status-name="status.name"
+          >
             <div class="status-card__main">
               <span class="status-card__swatch" :style="{ backgroundColor: status.color || '#94a3b8' }" />
               <div>
@@ -122,7 +127,7 @@ async function remove(id: string) {
 }
 
 .panel {
-  .glass-surface();
+  .workspace-surface();
   padding: @space-lg;
   display: flex;
   flex-direction: column;

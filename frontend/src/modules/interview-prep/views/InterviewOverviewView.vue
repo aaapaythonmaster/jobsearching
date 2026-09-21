@@ -26,6 +26,12 @@ onMounted(async () => {
       <p>按岗位记录真实面试问题。</p>
     </header>
 
+    <section class="interview-overview__summary" aria-label="面试准备概览">
+      <div><span>面试项目</span><strong>{{ store.projects.length }}</strong></div>
+      <div><span>待复盘问题</span><strong>{{ store.projects.reduce((total, item) => total + item.questionCount, 0) }}</strong></div>
+      <div><span>下一步</span><strong>进入岗位复盘</strong></div>
+    </section>
+
     <div
       v-if="store.reviewError"
       class="interview-overview__state interview-overview__state--error"
@@ -58,7 +64,7 @@ onMounted(async () => {
       >
     </div>
 
-    <div v-else class="interview-overview__grid">
+    <div v-else class="interview-overview__grid" aria-label="面试项目列表">
       <article v-for="project in store.projects" :key="project.jobPostId" class="interview-card">
         <div class="interview-card__body">
           <p class="interview-card__company">{{ project.companyName }}</p>
@@ -104,6 +110,33 @@ onMounted(async () => {
     }
   }
 
+  &__summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: @space-md;
+
+    > div {
+      .workspace-surface();
+      display: flex;
+      min-height: 88px;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: @space-sm;
+      padding: @space-lg;
+    }
+
+    span {
+      color: @color-text-secondary;
+      font-size: @font-size-sm;
+    }
+
+    strong {
+      color: @color-text;
+      font-size: @font-size-xl;
+      font-weight: 650;
+    }
+  }
+
   &__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -115,7 +148,7 @@ onMounted(async () => {
     padding: @space-xxl;
     border: 1px solid @color-border;
     border-radius: @radius-md;
-    .glass-surface();
+    .workspace-surface();
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -176,7 +209,7 @@ onMounted(async () => {
   padding: @space-xl;
   border: 1px solid @color-border;
   border-radius: @radius-md;
-  .glass-surface();
+  .workspace-surface();
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -241,6 +274,10 @@ onMounted(async () => {
 
 @media (max-width: 760px) {
   .interview-overview {
+    &__summary {
+      grid-template-columns: 1fr;
+    }
+
     &__grid {
       grid-template-columns: 1fr;
     }

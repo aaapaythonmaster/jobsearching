@@ -146,8 +146,12 @@ function groupItems(group: RequirementGroup): Array<{ label: string; items: stri
             >
               <h4>{{ group.jobDirection }} · {{ group.jobPostCount }} 条 JD</h4>
               <div class="analysis-group__grid">
-                <div v-for="section in groupItems(group)" :key="section.label">
-                  <h5>{{ section.label }}</h5>
+                <div
+                  v-for="section in groupItems(group)"
+                  :key="section.label"
+                  :aria-label="section.label === '风险提醒' ? '分析问题' : '分析建议'"
+                >
+                  <h5>{{ section.label === '风险提醒' ? '发现的问题 · 风险提醒' : `建议动作 · ${section.label}` }}</h5>
                   <ul v-if="section.items.length">
                     <li v-for="item in section.items" :key="item">{{ item }}</li>
                   </ul>
@@ -215,7 +219,7 @@ function groupItems(group: RequirementGroup): Array<{ label: string; items: stri
 }
 
 .panel {
-  .glass-surface();
+  .workspace-surface();
   padding: @space-lg;
   display: flex;
   flex-direction: column;

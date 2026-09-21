@@ -94,7 +94,7 @@ function scrollToCreate(): void {
 
 <template>
   <section class="job-page">
-    <header class="job-page__header">
+    <header class="job-page__header" aria-label="岗位操作">
       <div>
         <h2>岗位 JD</h2>
         <p>批量识别岗位截图，逐条检查后保存并记录进展。</p>
@@ -133,7 +133,7 @@ function scrollToCreate(): void {
     </section>
 
     <section class="panel">
-      <div class="job-page__filters">
+      <div class="job-page__filters" aria-label="岗位筛选">
         <BaseInput v-model="keyword" placeholder="搜索公司、岗位、JD" @enter="search" />
         <BaseInput v-model="jobDirection" placeholder="岗位方向" @enter="search" />
         <select v-model="statusId">
@@ -207,7 +207,7 @@ function scrollToCreate(): void {
 }
 
 .panel {
-  .glass-surface();
+  .workspace-surface();
   padding: @space-xl;
 
   h3 {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 
@@ -8,6 +8,16 @@ const router = useRouter()
 const landing = ref<HTMLElement | null>(null)
 const workspace = ref<HTMLElement | null>(null)
 const main = ref<HTMLElement | null>(null)
+const workspaceContext = computed(() => {
+  const labels: Record<string, string> = {
+    '/job-search/jobs': '岗位',
+    '/job-search/resumes': '简历',
+    '/job-search/analysis': '分析',
+    '/job-search/statuses': '状态',
+    '/interviews': '面试',
+  }
+  return labels[route.path] ?? '求职工作台'
+})
 
 function enterWorkspace(): void {
   workspace.value?.scrollIntoView({
@@ -96,6 +106,13 @@ onMounted(() => {
           <span>WORKSPACE</span>
           <span class="layout__content-line"></span>
         </div>
+        <div class="layout__context" :aria-label="`当前工作区：${workspaceContext}`">
+          <div>
+            <span class="layout__context-kicker">当前工作区</span>
+            <h1 class="layout__context-title">{{ workspaceContext }}</h1>
+          </div>
+          <span class="layout__context-state"><i aria-hidden="true"></i>工作台已就绪</span>
+        </div>
         <main ref="main" class="layout__main" tabindex="-1">
           <RouterView />
         </main>
@@ -151,7 +168,7 @@ onMounted(() => {
     z-index: 20;
     min-height: calc(100dvh - 48px);
     padding: 24px 16px;
-    .glass-surface();
+    .workspace-floating-surface();
     border-radius: 24px;
     display: flex;
     flex-direction: column;
@@ -286,6 +303,46 @@ onMounted(() => {
     letter-spacing: 0.14em;
   }
 
+  &__context {
+    .workspace-surface();
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: @space-lg;
+    margin-top: @space-md;
+    padding: 18px 20px;
+  }
+
+  &__context-kicker {
+    display: block;
+    margin-bottom: 2px;
+    color: @color-text-disabled;
+    font-size: @font-size-sm;
+  }
+
+  &__context-title {
+    color: @color-text;
+    font-size: @font-size-xl;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  &__context-state {
+    display: inline-flex;
+    align-items: center;
+    gap: @space-sm;
+    color: @color-text-secondary;
+    font-size: @font-size-sm;
+  }
+
+  &__context-state i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: @color-success;
+    box-shadow: 0 0 0 4px fade(@color-success, 12%);
+  }
+
   &__content-line {
     height: 1px;
     flex: 1;
@@ -335,6 +392,11 @@ onMounted(() => {
     &__sidebar-footer,
     &__content-bar {
       display: none;
+    }
+
+    &__context {
+      align-items: flex-start;
+      flex-direction: column;
     }
 
     &__main {

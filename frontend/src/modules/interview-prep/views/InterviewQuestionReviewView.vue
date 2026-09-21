@@ -86,7 +86,7 @@ onMounted(async () => {
       </header>
 
       <div class="question-review__layout">
-        <form class="question-form" @submit.prevent="saveQuestion">
+        <form class="question-form" aria-label="记录问题" @submit.prevent="saveQuestion">
           <header>
             <h3>记录面试问题</h3>
             <p>保存本轮面试中真实出现的问题。</p>
@@ -125,7 +125,7 @@ onMounted(async () => {
           </BaseButton>
         </form>
 
-        <section class="question-history" aria-labelledby="question-history-title">
+        <section class="question-history" aria-label="待复习问题" aria-labelledby="question-history-title">
           <header>
             <div>
               <h3 id="question-history-title">历史问题</h3>
@@ -213,7 +213,7 @@ onMounted(async () => {
     padding: @space-xxl;
     border: 1px solid @color-border;
     border-radius: @radius-md;
-    .glass-surface();
+    .workspace-surface();
     display: flex;
     justify-content: center;
     flex-direction: column;

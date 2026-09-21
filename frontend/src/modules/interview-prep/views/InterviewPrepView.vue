@@ -318,7 +318,7 @@ async function copyText(id: string, text: string) {
 }
 
 .panel {
-  .glass-surface();
+    .workspace-surface();
   padding: @space-lg;
   display: flex;
   flex-direction: column;
