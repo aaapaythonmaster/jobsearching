@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import WorkspaceContextPanel from '@/components/WorkspaceContextPanel.vue'
+import WorkspaceNavIcon from '@/components/WorkspaceNavIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -56,17 +57,17 @@ const contextPanelCopy = computed(() => ({
         <div class="layout__nav-group">
           <span class="layout__nav-label">工作台</span>
           <nav class="layout__nav" aria-label="工作台导航">
-            <RouterLink to="/job-search/jobs" active-class="is-active" :aria-current="route.path === '/job-search/jobs' ? 'page' : undefined"><span class="layout__nav-icon" aria-hidden="true">▦</span><span>岗位</span></RouterLink>
-            <RouterLink to="/job-search/resumes" active-class="is-active" :aria-current="route.path === '/job-search/resumes' ? 'page' : undefined"><span class="layout__nav-icon" aria-hidden="true">▤</span><span>简历</span></RouterLink>
-            <RouterLink to="/interviews" active-class="is-active" :aria-current="route.path === '/interviews' ? 'page' : undefined"><span class="layout__nav-icon" aria-hidden="true">◌</span><span>面试</span></RouterLink>
+            <RouterLink to="/job-search/jobs" active-class="is-active" :aria-current="route.path === '/job-search/jobs' ? 'page' : undefined"><WorkspaceNavIcon name="briefcase" /><span>岗位</span></RouterLink>
+            <RouterLink to="/job-search/resumes" active-class="is-active" :aria-current="route.path === '/job-search/resumes' ? 'page' : undefined"><WorkspaceNavIcon name="file-text" /><span>简历</span></RouterLink>
+            <RouterLink to="/interviews" active-class="is-active" :aria-current="route.path === '/interviews' ? 'page' : undefined"><WorkspaceNavIcon name="message-square" /><span>面试</span></RouterLink>
           </nav>
         </div>
 
         <div class="layout__nav-group layout__nav-group--secondary">
           <span class="layout__nav-label">分析与管理</span>
           <nav class="layout__nav" aria-label="辅助导航">
-            <RouterLink to="/job-search/analysis" active-class="is-active"><span class="layout__nav-icon" aria-hidden="true">⌁</span><span>分析</span></RouterLink>
-            <RouterLink to="/job-search/statuses" active-class="is-active"><span class="layout__nav-icon" aria-hidden="true">☷</span><span>求职状态</span></RouterLink>
+            <RouterLink to="/job-search/analysis" active-class="is-active"><WorkspaceNavIcon name="trend" /><span>分析</span></RouterLink>
+            <RouterLink to="/job-search/statuses" active-class="is-active"><WorkspaceNavIcon name="kanban" /><span>求职状态</span></RouterLink>
           </nav>
         </div>
 

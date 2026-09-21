@@ -45,9 +45,9 @@ describe('landing and fullscreen workspace', () => {
     expect(wrapper.find('.layout__workspace').exists()).toBe(false)
   })
 
-  it('navigates from Get started to the jobs workspace', async () => {
+  it('navigates from the workspace preview to the jobs workspace', async () => {
     const wrapper = await mountLayout('/')
-    await wrapper.get('.home-view__start').trigger('click')
+    await wrapper.get('.home-view__workspace-preview').trigger('click')
     await vi.waitFor(() => expect(routerPath(wrapper)).toBe('/job-search/jobs'))
     expect(wrapper.find('.layout__workspace').exists()).toBe(true)
     wrapper.unmount()
@@ -58,8 +58,8 @@ describe('landing and fullscreen workspace', () => {
     expect(wrapper.get('.layout__sidebar').text()).toContain('求职工作台')
     expect(wrapper.get('.layout__sidebar').text()).toContain('面试')
     expect(wrapper.find('a[href="/interviews"]').exists()).toBe(true)
-    expect(wrapper.findAll('.layout__nav-icon')).toHaveLength(5)
-    expect(wrapper.findAll('.layout__nav-icon[aria-hidden="true"]')).toHaveLength(5)
+    expect(wrapper.findAll('.workspace-nav-icon')).toHaveLength(5)
+    expect(wrapper.findAll('.workspace-nav-icon[aria-hidden="true"]')).toHaveLength(5)
     expect(wrapper.findAll('.layout__nav-index')).toHaveLength(0)
     expect(wrapper.get('.layout__workspace').classes()).toContain('layout__workspace--fullscreen')
     expect(wrapper.find('.layout__landing').exists()).toBe(false)

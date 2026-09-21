@@ -1,335 +1,74 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-import RippleDistortion from '@/components/RippleDistortion/index.vue'
-import oceanBackground from '@/assets/landing/background-ocean.jpg'
-import hillsBackground from '@/assets/landing/background-hills.jpg'
+import ColorBends from '@/components/ColorBends.vue'
+import DotField from '@/components/DotField.vue'
 
 const emit = defineEmits<{ start: [] }>()
-const hero = ref<HTMLElement | null>(null)
-const rippleEnabled = ref(true)
-let visibilityObserver: IntersectionObserver | undefined
-onMounted(() => {
-  if (!hero.value || typeof IntersectionObserver === 'undefined') return
-  visibilityObserver = new IntersectionObserver(
-    ([entry]) => {
-      rippleEnabled.value = Boolean(entry?.isIntersecting && entry.intersectionRatio > 0)
-    },
-    { threshold: 0.01 },
-  )
-  visibilityObserver.observe(hero.value)
-})
-onUnmounted(() => visibilityObserver?.disconnect())
-const backgrounds = [oceanBackground, hillsBackground] as const
-const selectedBackground =
-  backgrounds[Math.floor(Math.random() * backgrounds.length)] ?? backgrounds[0]
 
-function start(): void {
+function openWorkspace(): void {
   emit('start')
 }
 </script>
 
 <template>
-  <section ref="hero" class="home-view">
+  <main class="home-view">
+    <DotField :opacity="0.14" :dot-spacing="20" :dot-radius="1.1" />
+    <ColorBends
+      :colors="['#32F08C']"
+      :rotation="90"
+      :speed="0.2"
+      :frequency="1"
+      :noise="0.15"
+      :band-width="0.14"
+      :intensity="1.3"
+      :iterations="1"
+    />
+    <div class="home-view__wash" aria-hidden="true"></div>
     <div class="home-view__shell">
       <div class="home-view__copy">
-        <div class="home-view__brand">
-          <span class="home-view__mark" aria-hidden="true"></span>
-          <span>求职工作台</span>
-        </div>
-        <h1 class="home-view__headline">把每一次求职推进，变成可见的下一步。</h1>
-        <p>岗位、简历、面试问题，集中在一个安静而清晰的工作台里。</p>
-        <div class="home-view__actions">
-          <button class="home-view__start" type="button" @click="start">Get started</button>
-          <span class="home-view__note">从岗位收集开始，持续推进你的秋招。</span>
-        </div>
+        <p class="home-view__line home-view__line--first">Job is on its way</p>
+        <p class="home-view__line home-view__line--second"><strong>Mom, life is an open wilderness</strong></p>
       </div>
-
-      <div class="home-view__visual" aria-label="求职工作台预览">
-        <div class="home-view__visual-frame">
-          <RippleDistortion
-            class="home-view__ripple"
-            :src="selectedBackground"
-            :enabled="rippleEnabled"
-            trigger="both"
-            quality="medium"
-          />
-          <div class="home-view__gradient" aria-hidden="true"></div>
-          <div class="home-view__visual-label">
-            <span>WORKSPACE</span>
-            <span class="home-view__visual-line"></span>
-            <span>01</span>
-          </div>
-          <div class="home-view__insight">
-            <span class="home-view__insight-kicker">本周求职进度</span>
-            <strong>把准备过的，都留下来。</strong>
-            <div class="home-view__insight-items">
-              <span><i></i>岗位</span>
-              <span><i></i>简历</span>
-              <span><i></i>面试</span>
-            </div>
-          </div>
+      <div
+        class="home-view__workspace-preview"
+        role="button"
+        tabindex="0"
+        aria-label="打开求职工作台"
+        @click="openWorkspace"
+        @keydown.enter.prevent="openWorkspace"
+        @keydown.space.prevent="openWorkspace"
+      >
+        <div class="home-view__preview-bar"><span class="home-view__preview-dot"></span><span>求职工作台</span><span class="home-view__preview-meta">WORKSPACE</span></div>
+        <div class="home-view__preview-body">
+          <aside class="home-view__preview-sidebar">
+            <span class="home-view__preview-brand"></span>
+            <span class="home-view__preview-nav home-view__preview-nav--active"></span>
+            <span class="home-view__preview-nav"></span>
+            <span class="home-view__preview-nav"></span>
+            <span class="home-view__preview-nav"></span>
+          </aside>
+          <div class="home-view__preview-main"><span class="home-view__preview-heading"></span><span class="home-view__preview-card"></span><span class="home-view__preview-card home-view__preview-card--short"></span></div>
+          <div class="home-view__preview-context"><span class="home-view__preview-heading"></span><span class="home-view__preview-detail"></span><span class="home-view__preview-detail home-view__preview-detail--short"></span></div>
         </div>
-        <p class="home-view__caption">自然光下的求职工作台 · 收集、整理、复盘</p>
+        <span class="home-view__preview-hint">进入工作台 ↗</span>
       </div>
     </div>
-  </section>
+  </main>
 </template>
 
 <style lang="less" scoped>
-.home-view {
-  position: relative;
-  width: 100%;
-  min-height: 100dvh;
-  overflow: hidden;
-  color: #152d3b;
-  background:
-    radial-gradient(circle at 8% 12%, rgba(126, 207, 230, 0.22), transparent 36%),
-    radial-gradient(circle at 92% 84%, rgba(120, 198, 163, 0.18), transparent 32%),
-    #edf6f5;
-
-  &__shell {
-    width: min(1240px, calc(100% - 96px));
-    min-height: 100dvh;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
-    align-items: center;
-    gap: clamp(36px, 6vw, 96px);
-    padding: 68px 0;
-  }
-
-  &__copy {
-    position: relative;
-    z-index: 2;
-    max-width: 540px;
-  }
-
-  &__brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 36px;
-    color: #2c5362;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-  }
-
-  &__mark {
-    width: 34px;
-    height: 34px;
-    border: 1px solid rgba(0, 103, 192, 0.28);
-    border-radius: 12px;
-    background:
-      linear-gradient(145deg, rgba(41, 159, 202, 0.24), rgba(56, 160, 116, 0.14)),
-      rgba(255, 255, 255, 0.72);
-    box-shadow: 0 8px 20px rgba(40, 77, 94, 0.08);
-  }
-
-  &__headline {
-    max-width: 520px;
-    margin: 0;
-    color: #152d3b;
-    font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', serif;
-    font-size: clamp(42px, 4.2vw, 62px);
-    font-weight: 600;
-    letter-spacing: -0.035em;
-    line-height: 1.08;
-    text-wrap: balance;
-  }
-
-  &__copy > p {
-    max-width: 430px;
-    margin-top: 24px;
-    color: #506470;
-    font-size: 17px;
-    line-height: 1.6;
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 34px;
-
-    > .home-view__note {
-      max-width: none;
-      color: #617581;
-      font-size: 12px;
-      letter-spacing: -0.01em;
-      line-height: 1.45;
-      white-space: nowrap;
-    }
-  }
-
-  &__visual {
-    position: relative;
-    min-width: 0;
-  }
-
-  &__visual-frame {
-    position: relative;
-    min-height: min(72vh, 680px);
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: 34px;
-    background: rgba(255, 255, 255, 0.46);
-    box-shadow:
-      0 28px 80px rgba(32, 75, 87, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.92);
-    transform: rotate(1.3deg);
-  }
-
-  &__ripple {
-    position: absolute;
-    inset: 0;
-  }
-
-  &__gradient {
-    position: absolute;
-    inset: auto 0 0;
-    height: 34vh;
-    pointer-events: none;
-    background: linear-gradient(180deg, transparent, rgba(3, 12, 16, 0.3));
-  }
-
-  &__visual-label {
-    position: absolute;
-    top: 22px;
-    right: 24px;
-    left: 24px;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: rgba(255, 255, 255, 0.82);
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-shadow: 0 1px 12px rgba(0, 16, 24, 0.38);
-  }
-
-  &__visual-line {
-    height: 1px;
-    flex: 1;
-    background: rgba(255, 255, 255, 0.5);
-  }
-
-  &__insight {
-    position: absolute;
-    right: 24px;
-    bottom: 24px;
-    left: 24px;
-    max-width: 360px;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 20px 22px;
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: 20px;
-    color: #173747;
-    background: rgba(248, 253, 253, 0.74);
-    box-shadow:
-      0 18px 50px rgba(32, 75, 87, 0.16),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(20px) saturate(130%);
-  }
-
-  &__insight-kicker {
-    color: #617581;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-  }
-
-  &__insight strong {
-    font-size: 20px;
-    font-weight: 650;
-    letter-spacing: -0.03em;
-  }
-
-  &__insight-items {
-    display: flex;
-    gap: 18px;
-    margin-top: 8px;
-    color: #506470;
-    font-size: 12px;
-
-    span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    i {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #16734b;
-      box-shadow: 0 0 0 4px rgba(22, 115, 75, 0.1);
-    }
-  }
-
-  &__caption {
-    margin-top: 18px;
-    color: #617581;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-align: right;
-  }
-
-  &__start {
-    min-width: 148px;
-    min-height: 48px;
-    padding: 0 28px;
-    border: 1px solid rgba(255, 255, 255, 0.88);
-    border-radius: 999px;
-    color: #152d3b;
-    background: rgba(255, 255, 255, 0.76);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      0 12px 36px rgba(0, 16, 24, 0.16);
-    backdrop-filter: blur(14px) saturate(130%);
-    font: inherit;
-    font-weight: 650;
-    letter-spacing: 0.01em;
-    white-space: nowrap;
-    cursor: pointer;
-    transition:
-      background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
-
-    &:hover {
-      border-color: rgba(244, 251, 255, 0.82);
-      background: rgba(255, 255, 255, 0.9);
-    }
-
-    &:active {
-      transform: scale(0.97);
-    }
-
-    &:focus-visible {
-      outline: 2px solid #0067c0;
-      outline-offset: 4px;
-    }
-  }
-}
-
-@supports not (backdrop-filter: blur(1px)) {
-  .home-view__start {
-    background: #f8fcfd;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .home-view__start {
-    background: #f8fcfd;
-    backdrop-filter: none;
-  }
-
-  .home-view__insight {
-    background: #f8fcfd;
-    backdrop-filter: none;
-  }
-}
+.home-view { position: relative; min-height: 100dvh; overflow: hidden; color: #06150d; background: #07170d; isolation: isolate; }
+.home-view__wash { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(circle at 64% 50%, rgba(50, 240, 140, 0.16), transparent 42%), linear-gradient(110deg, rgba(3, 16, 9, 0.76), rgba(4, 14, 9, 0.12) 58%, rgba(3, 16, 9, 0.54)); }
+.home-view__shell { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 0.84fr) minmax(420px, 0.98fr); align-items: center; gap: clamp(48px, 9vw, 144px); width: min(1320px, calc(100% - 112px)); min-height: 100dvh; margin: 0 auto; }
+.home-view__copy { min-width: 0; }
+.home-view__line { margin: 0; color: rgba(240, 255, 246, 0.92); font-size: clamp(28px, 3.5vw, 58px); line-height: 1.03; letter-spacing: -0.045em; text-wrap: balance; }
+.home-view__line--first { margin-left: clamp(0px, 2vw, 32px); }
+.home-view__line--second { margin-top: 18px; margin-left: clamp(34px, 7vw, 118px); color: #32f08c; }
+.home-view__line--second strong { font-weight: 720; }
+.home-view__workspace-preview { position: relative; min-height: 420px; overflow: hidden; border: 1px solid rgba(211, 255, 228, 0.36); border-radius: 18px; background: rgba(8, 28, 17, 0.68); box-shadow: 0 30px 100px rgba(0, 0, 0, 0.34), 0 0 0 8px rgba(50, 240, 140, 0.04); cursor: pointer; transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
+.home-view__workspace-preview:hover, .home-view__workspace-preview:focus-visible { transform: translateY(-6px); border-color: rgba(50, 240, 140, 0.9); box-shadow: 0 34px 110px rgba(0, 0, 0, 0.42), 0 0 0 8px rgba(50, 240, 140, 0.1); outline: none; }
+.home-view__preview-bar { display: flex; align-items: center; gap: 9px; height: 42px; padding: 0 14px; border-bottom: 1px solid rgba(224, 255, 236, 0.16); color: rgba(236, 255, 243, 0.92); font-size: 11px; }
+.home-view__preview-dot { width: 11px; height: 11px; border-radius: 3px; background: #32f08c; }.home-view__preview-meta { margin-left: auto; color: rgba(236, 255, 243, 0.42); font-size: 9px; letter-spacing: .12em; }
+.home-view__preview-body { display: grid; grid-template-columns: 26% 46% 28%; height: 378px; }.home-view__preview-sidebar, .home-view__preview-main, .home-view__preview-context { padding: 18px 12px; }.home-view__preview-sidebar { border-right: 1px solid rgba(224, 255, 236, 0.12); background: rgba(1, 10, 5, 0.32); }.home-view__preview-main { border-right: 1px solid rgba(224, 255, 236, 0.12); }.home-view__preview-brand { display: block; width: 70%; height: 10px; margin-bottom: 27px; border-radius: 3px; background: rgba(236, 255, 243, 0.76); }.home-view__preview-nav { display: block; width: 82%; height: 25px; margin-top: 8px; border-radius: 4px; background: rgba(236, 255, 243, 0.12); }.home-view__preview-nav--active { background: rgba(50, 240, 140, 0.62); }.home-view__preview-heading { display: block; width: 44%; height: 14px; border-radius: 3px; background: rgba(236, 255, 243, 0.78); }.home-view__preview-card { display: block; height: 110px; margin-top: 22px; border: 1px solid rgba(236, 255, 243, 0.2); border-radius: 8px; background: rgba(236, 255, 243, 0.08); }.home-view__preview-card--short { height: 78px; margin-top: 12px; }.home-view__preview-detail { display: block; width: 80%; height: 9px; margin-top: 32px; border-radius: 3px; background: rgba(236, 255, 243, 0.38); }.home-view__preview-detail--short { width: 60%; margin-top: 12px; }.home-view__preview-hint { position: absolute; right: 16px; bottom: 13px; color: #32f08c; font-size: 11px; letter-spacing: .04em; }
+@media (max-width: 920px) { .home-view__shell { grid-template-columns: 1fr; width: min(640px, calc(100% - 48px)); gap: 42px; padding: 72px 0; }.home-view__workspace-preview { min-height: 340px; }.home-view__preview-body { height: 298px; } }
+@media (prefers-reduced-motion: reduce) { .home-view__workspace-preview { transition: none; } }
 </style>
