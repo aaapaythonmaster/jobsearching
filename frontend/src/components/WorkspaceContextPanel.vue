@@ -41,11 +41,12 @@ withDefaults(
 
 <style lang="less" scoped>
 .context-panel {
-  .workspace-surface();
   display: flex;
-  min-height: 520px;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   overflow: hidden;
+  background: @color-workspace-surface;
 }
 
 .context-panel__header {
@@ -53,7 +54,7 @@ withDefaults(
   align-items: flex-start;
   justify-content: space-between;
   gap: @space-md;
-  padding: @space-lg;
+  padding: 18px;
   border-bottom: 1px solid @color-border;
 
   h2 {
@@ -92,7 +93,7 @@ withDefaults(
   align-items: center;
   justify-content: center;
   gap: @space-sm;
-  padding: @space-xl;
+  padding: 24px 18px;
   text-align: center;
 
   strong {
@@ -108,7 +109,7 @@ withDefaults(
 
 .context-panel__body {
   flex: 1;
-  padding: @space-lg;
+  padding: 18px;
 }
 
 .context-panel__actions {
