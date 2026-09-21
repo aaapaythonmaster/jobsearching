@@ -7,6 +7,7 @@ describe('DotField', () => {
     const wrapper = mount(DotField, { props: { opacity: 0.16 } })
     expect(wrapper.get('[data-testid="dot-field"]').attributes('data-opacity')).toBe('0.16')
     expect(wrapper.findAll('canvas')).toHaveLength(1)
+    expect(wrapper.find('.dot-field__glow').exists()).toBe(true)
     wrapper.unmount()
   })
 })

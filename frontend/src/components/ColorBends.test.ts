@@ -7,6 +7,7 @@ describe('ColorBends', () => {
     const wrapper = mount(ColorBends, { props: { colors: ['#32F08C'], speed: 0.2, rotation: 90 } })
     expect(wrapper.get('[data-testid="color-bends"]').attributes('data-colors')).toBe('#32F08C')
     expect(wrapper.get('[data-testid="color-bends"]').attributes('data-rotation')).toBe('90')
+    expect(wrapper.find('.color-bends__fallback').exists()).toBe(true)
     wrapper.unmount()
   })
 })

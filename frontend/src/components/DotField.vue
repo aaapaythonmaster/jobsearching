@@ -47,11 +47,15 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="host" data-testid="dot-field" class="dot-field" :data-opacity="opacity" aria-hidden="true">
+    <div class="dot-field__glow"></div>
     <canvas ref="canvas"></canvas>
   </div>
 </template>
 
 <style scoped>
 .dot-field { position: absolute; inset: 0; z-index: 0; overflow: hidden; opacity: 0.72; pointer-events: none; }
+.dot-field__glow { position: absolute; inset: -20%; background: radial-gradient(circle at 28% 24%, rgba(50, 240, 140, .22), transparent 28%), radial-gradient(circle at 78% 76%, rgba(50, 240, 140, .14), transparent 34%); animation: dot-field-drift 18s ease-in-out infinite alternate; }
 .dot-field canvas { display: block; width: 100%; height: 100%; }
+@keyframes dot-field-drift { from { transform: translate3d(-2%, -2%, 0); } to { transform: translate3d(2%, 2%, 0); } }
+@media (prefers-reduced-motion: reduce) { .dot-field__glow { animation: none; } }
 </style>

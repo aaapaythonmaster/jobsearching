@@ -105,9 +105,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="host" data-testid="color-bends" class="color-bends" :data-colors="colors.join(',')" :data-rotation="rotation"></div>
+  <div ref="host" data-testid="color-bends" class="color-bends" :data-colors="colors.join(',')" :data-rotation="rotation">
+    <div class="color-bends__fallback" aria-hidden="true"></div>
+  </div>
 </template>
 
 <style scoped>
 .color-bends { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.color-bends__fallback { position: absolute; inset: -25%; background: radial-gradient(ellipse at 30% 30%, rgba(50, 240, 140, .92), transparent 34%), radial-gradient(ellipse at 78% 55%, rgba(11, 104, 58, .82), transparent 38%), linear-gradient(120deg, #06180c, #0e4f2c 48%, #03120a); filter: saturate(125%); animation: color-bends-flow 14s ease-in-out infinite alternate; }
+@keyframes color-bends-flow { from { transform: translate3d(-3%, -2%, 0) rotate(-3deg) scale(1); } to { transform: translate3d(3%, 2%, 0) rotate(4deg) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .color-bends__fallback { animation: none; } }
 </style>
