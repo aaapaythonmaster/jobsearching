@@ -4,8 +4,8 @@
   justify-content: center;
   gap: @space-xs;
   border: 1px solid transparent;
-  border-radius: 10px;
-  font-weight: 650;
+  border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color @transition-fast, border-color @transition-fast,
     color @transition-fast, transform @transition-fast, box-shadow @transition-fast;
@@ -22,9 +22,9 @@
     font-size: @font-size-sm;
   }
   &--md {
-    height: 36px;
-    padding: 0 @space-lg;
-    font-size: @font-size-md;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
   }
   &--lg {
     height: 44px;
@@ -33,22 +33,21 @@
   }
 
   &--primary {
-    background: linear-gradient(180deg, @color-primary, @color-primary-hover);
-    color: @color-text-inverse;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 12px fade(@color-primary, 16%);
+    background: @color-action;
+    color: @color-action-text;
+    box-shadow: none;
     &:hover:not(:disabled) {
-      filter: brightness(1.08);
+      background: lighten(@color-action, 4%);
     }
     &:active:not(:disabled) {
-      filter: brightness(0.96);
+      background: darken(@color-action, 5%);
     }
   }
   &--secondary {
-    background-color: @color-bg;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    background-color: #ffffff;
+    box-shadow: none;
     color: @color-text;
     border-color: @color-border;
-    backdrop-filter: blur(18px);
     &:hover:not(:disabled) {
       border-color: @color-primary;
       color: @color-primary;

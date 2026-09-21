@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
+import WorkspaceContextPanel from '@/components/WorkspaceContextPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +18,16 @@ const workspaceContext = computed(() => {
     '/interviews': '面试',
   }
   return labels[route.path] ?? '求职工作台'
+})
+const contextPanelTitle = computed(() => {
+  const labels: Record<string, string> = {
+    '/job-search/jobs': '岗位详情',
+    '/job-search/resumes': '简历预览',
+    '/job-search/analysis': '分析建议',
+    '/job-search/statuses': '求职阶段说明',
+    '/interviews': '面试进度',
+  }
+  return labels[route.path] ?? '上下文'
 })
 
 function enterWorkspace(): void {
@@ -101,22 +112,48 @@ onMounted(() => {
           <span>工作台已就绪</span>
         </div>
       </aside>
-      <div class="layout__content">
-        <div class="layout__content-bar" aria-hidden="true">
-          <span>WORKSPACE</span>
-          <span class="layout__content-line"></span>
-        </div>
-        <div class="layout__context" :aria-label="`当前工作区：${workspaceContext}`">
-          <div>
-            <span class="layout__context-kicker">当前工作区</span>
-            <h1 class="layout__context-title">{{ workspaceContext }}</h1>
+      <div class="layout__main-column">
+        <div class="layout__content">
+          <div class="layout__content-bar" aria-hidden="true">
+            <span>WORKSPACE</span>
+            <span class="layout__content-line"></span>
           </div>
-          <span class="layout__context-state"><i aria-hidden="true"></i>工作台已就绪</span>
+          <div class="layout__context" :aria-label="`当前工作区：${workspaceContext}`">
+            <div>
+              <span class="layout__context-kicker">当前工作区</span>
+              <h1 class="layout__context-title">{{ workspaceContext }}</h1>
+            </div>
+            <span class="layout__context-state"><i aria-hidden="true"></i>工作台已就绪</span>
+          </div>
+          <main ref="main" class="layout__main" tabindex="-1">
+            <RouterView />
+          </main>
         </div>
-        <main ref="main" class="layout__main" tabindex="-1">
-          <RouterView />
-        </main>
       </div>
+      <aside class="layout__context-column">
+        <WorkspaceContextPanel :title="contextPanelTitle" :empty="route.path === '/' || route.path === '/normal'">
+          <template v-if="route.path === '/job-search/jobs'">
+            <strong>选择一个岗位</strong>
+            <p>查看公司、职位、薪资和下一步操作。</p>
+          </template>
+          <template v-else-if="route.path === '/job-search/resumes'">
+            <strong>选择一份简历</strong>
+            <p>这里会显示目标方向、来源文件和更新时间。</p>
+          </template>
+          <template v-else-if="route.path === '/job-search/analysis'">
+            <strong>等待分析结果</strong>
+            <p>选择岗位后查看共性要求和风险提醒。</p>
+          </template>
+          <template v-else-if="route.path === '/job-search/statuses'">
+            <strong>管理求职阶段</strong>
+            <p>状态将用于标记岗位当前进展。</p>
+          </template>
+          <template v-else-if="route.path === '/interviews'">
+            <strong>选择面试项目</strong>
+            <p>查看待复习问题和最近一次复盘。</p>
+          </template>
+        </WorkspaceContextPanel>
+      </aside>
     </section>
   </div>
 </template>
@@ -128,7 +165,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   color: @color-text;
-  background: #edf5f6;
+  background: @color-workspace-canvas;
   isolation: isolate;
   overflow-anchor: none;
 
@@ -147,10 +184,7 @@ onMounted(() => {
     inset: 0;
     z-index: -2;
     pointer-events: none;
-    background:
-      radial-gradient(ellipse at 8% 15%, rgba(96, 190, 225, 0.26), transparent 55%),
-      radial-gradient(ellipse at 90% 62%, rgba(109, 195, 161, 0.22), transparent 55%),
-      linear-gradient(145deg, #edf7fc, #f6faf9 48%, #eaf5ef);
+    background: @color-workspace-canvas;
   }
 
   &::after {
@@ -159,7 +193,7 @@ onMounted(() => {
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 50%);
+    background: transparent;
   }
 
   &__sidebar {
@@ -168,7 +202,7 @@ onMounted(() => {
     z-index: 20;
     min-height: calc(100dvh - 48px);
     padding: 24px 16px;
-    .workspace-floating-surface();
+    .workspace-surface();
     border-radius: 24px;
     display: flex;
     flex-direction: column;
@@ -226,10 +260,10 @@ onMounted(() => {
       }
 
       &.is-active {
-        color: @color-primary-active;
-        background: linear-gradient(100deg, fade(@color-primary, 14%), rgba(255, 255, 255, 0.5));
-        border-color: fade(@color-primary, 16%);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        color: @color-action-text;
+        background: fade(@color-action, 24%);
+        border-color: fade(@color-action, 60%);
+        box-shadow: inset 3px 0 0 @color-action;
       }
     }
   }
@@ -284,13 +318,23 @@ onMounted(() => {
     margin: 0 auto;
     padding: 24px 0 56px;
     display: grid;
-    grid-template-columns: 232px minmax(0, 1fr);
+    grid-template-columns: 220px minmax(0, 1fr) 340px;
     align-items: start;
     gap: 28px;
   }
 
   &__content {
     min-width: 0;
+  }
+
+  &__main-column,
+  &__context-column {
+    min-width: 0;
+  }
+
+  &__context-column {
+    position: sticky;
+    top: 24px;
   }
 
   &__content-bar {
@@ -401,6 +445,10 @@ onMounted(() => {
 
     &__main {
       padding-top: @space-md;
+    }
+
+    &__context-column {
+      position: static;
     }
   }
 }

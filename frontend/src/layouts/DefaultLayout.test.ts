@@ -75,6 +75,22 @@ describe('continuous landing and workspace', () => {
     expect(wrapper.find('.layout__header').exists()).toBe(false)
   })
 
+  it('renders the three desktop workspace columns', async () => {
+    const wrapper = await mountLayout('/normal')
+    expect(wrapper.find('.layout__sidebar').exists()).toBe(true)
+    expect(wrapper.find('.layout__main-column').exists()).toBe(true)
+    expect(wrapper.find('.layout__context-column').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="上下文面板"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('shows route-specific context content in the right column', async () => {
+    const wrapper = await mountLayout('/job-search/resumes')
+    expect(wrapper.get('[aria-label="上下文面板"]').text()).toContain('简历预览')
+    expect(wrapper.get('[aria-label="上下文面板"]').text()).toContain('选择一份简历')
+    wrapper.unmount()
+  })
+
   it('labels the active workspace context on deep links', async () => {
     const wrapper = await mountLayout('/job-search/resumes')
     expect(wrapper.get('.layout__context-title').text()).toBe('简历')
