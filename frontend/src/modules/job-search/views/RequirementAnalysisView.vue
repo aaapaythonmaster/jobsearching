@@ -29,7 +29,7 @@ async function load() {
     const [nextAnalyses] = await Promise.all([jobSearchApi.listRequirementAnalyses(), store.fetchJobs()])
     analyses.value = nextAnalyses
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -68,10 +68,21 @@ async function generateAnalysis() {
     analyses.value = [analysis, ...analyses.value]
     title.value = ''
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   } finally {
     generating.value = false
   }
+}
+
+function friendlyError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  if (/failed to fetch|network|网络|连接/i.test(message)) {
+    return '后端服务暂时不可用，请确认后端已启动后重试。'
+  }
+  if (/api|model|ai|模型/i.test(message)) {
+    return 'AI 分析服务暂时不可用，请检查模型配置后重试。'
+  }
+  return `分析失败：${message || '未知错误'}`
 }
 
 function groupItems(group: RequirementGroup): Array<{ label: string; items: string[] }> {
@@ -125,7 +136,10 @@ function groupItems(group: RequirementGroup): Array<{ label: string; items: stri
         >
           生成共性分析（{{ selectedCount }}）
         </BaseButton>
-        <p v-if="error" class="state state--error">{{ error }}</p>
+        <div v-if="error" class="analysis-page__error">
+          <p class="state state--error">{{ error }}</p>
+          <BaseButton size="sm" variant="secondary" aria-label="重试分析" @click="load">重试</BaseButton>
+        </div>
       </section>
 
       <section class="panel">

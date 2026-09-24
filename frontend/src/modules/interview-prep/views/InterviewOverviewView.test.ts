@@ -1,4 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InterviewOverviewView from './InterviewOverviewView.vue'
 
@@ -56,5 +57,10 @@ describe('InterviewOverviewView', () => {
 
     expect(wrapper.text()).toContain('还没有岗位')
     expect(wrapper.text()).toContain('先添加岗位')
+  })
+
+  it('keeps interview card values aligned under their labels', () => {
+    const style = readFileSync('src/modules/interview-prep/views/InterviewOverviewView.vue', 'utf8')
+    expect(style).toContain('dd {\n    margin: 0;')
   })
 })

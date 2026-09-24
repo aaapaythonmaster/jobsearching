@@ -34,4 +34,20 @@ describe('RequirementAnalysisView decision sections', () => {
     expect(wrapper.find('[aria-label="分析问题"]').exists()).toBe(true)
     expect(wrapper.find('[aria-label="分析建议"]').text()).toContain('建议动作')
   })
+
+  it('shows a Chinese retry message when the analysis request cannot reach the backend', async () => {
+    mocks.listRequirementAnalyses.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    const wrapper = mount(RequirementAnalysisView, {
+      global: {
+        stubs: {
+          BaseButton: { template: '<button @click="$emit(\'click\')"><slot /></button>' },
+          BaseEmpty: { template: '<div />' },
+          BaseInput: { template: '<input />' },
+        },
+      },
+    })
+    await vi.waitFor(() => expect(wrapper.find('.state--error').exists()).toBe(true))
+    expect(wrapper.get('.state--error').text()).toContain('后端服务暂时不可用')
+    expect(wrapper.find('[aria-label="重试分析"]').exists()).toBe(true)
+  })
 })

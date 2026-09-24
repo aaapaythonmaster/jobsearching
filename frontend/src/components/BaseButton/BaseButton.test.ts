@@ -11,5 +11,12 @@ describe('Trae primary button tokens', () => {
     expect(style).toContain('color: @color-action-text')
     expect(style).toContain('font-size: 13px')
     expect(style).toContain('padding: 0 12px')
+    expect(style).toContain('white-space: nowrap')
+  })
+
+  it('uses a neutral black-on-gray treatment for destructive actions', () => {
+    const style = readFileSync('src/components/BaseButton/style.less', 'utf8')
+    expect(style).toContain('background-color: @color-bg-muted')
+    expect(style).toContain('color: @color-text')
   })
 })

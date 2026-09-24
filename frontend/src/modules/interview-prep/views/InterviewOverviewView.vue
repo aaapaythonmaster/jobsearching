@@ -242,6 +242,7 @@ onMounted(async () => {
   }
 
   dd {
+    margin: 0;
     color: @color-text;
     font-variant-numeric: tabular-nums;
   }

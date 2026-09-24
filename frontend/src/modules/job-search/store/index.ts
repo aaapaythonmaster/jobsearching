@@ -6,6 +6,7 @@ import type {
   ApplicationStatusCreateInput,
   ApplicationStatusUpdateInput,
   JobPost,
+  JobContextMode,
   JobPostCreateInput,
   JobPostUpdateInput,
   Resume,
@@ -18,6 +19,22 @@ export const useJobSearchStore = defineStore('job-search', () => {
   const statuses = ref<ApplicationStatus[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const contextJob = ref<JobPost | null>(null)
+  const contextMode = ref<JobContextMode>('detail')
+
+  function openJobContext(job: JobPost, mode: JobContextMode = 'detail') {
+    contextJob.value = job
+    contextMode.value = mode
+  }
+
+  function setJobContextMode(mode: JobContextMode) {
+    if (contextJob.value) contextMode.value = mode
+  }
+
+  function clearJobContext() {
+    contextJob.value = null
+    contextMode.value = 'detail'
+  }
 
   async function run<T>(work: () => Promise<T>): Promise<T> {
     loading.value = true
@@ -78,6 +95,7 @@ export const useJobSearchStore = defineStore('job-search', () => {
   async function updateJob(id: string, input: JobPostUpdateInput) {
     const job = await run(() => jobSearchApi.updateJob(id, input))
     setJob(job)
+    if (contextJob.value?.id === job.id) contextJob.value = job
     return job
   }
 
@@ -114,6 +132,11 @@ export const useJobSearchStore = defineStore('job-search', () => {
     statuses,
     loading,
     error,
+    contextJob,
+    contextMode,
+    openJobContext,
+    setJobContextMode,
+    clearJobContext,
     fetchResumes,
     uploadResume,
     updateResume,

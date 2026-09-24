@@ -1,118 +1,206 @@
 <script setup lang="ts">
+import * as THREE from 'three'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Mesh, Program, Renderer, Triangle } from 'ogl'
+import { colorBendsFragment, colorBendsVertex } from './colorBendsShaders'
 
 const props = withDefaults(defineProps<{
   colors?: string[]
   rotation?: number
+  autoRotate?: number
   speed?: number
+  transparent?: boolean
+  scale?: number
   frequency?: number
+  warpStrength?: number
+  mouseInfluence?: number
+  parallax?: number
   noise?: number
-  bandWidth?: number
-  intensity?: number
   iterations?: number
+  intensity?: number
+  bandWidth?: number
 }>(), {
   colors: () => ['#32F08C'],
   rotation: 90,
+  autoRotate: 0,
   speed: 0.2,
+  transparent: true,
+  scale: 1,
   frequency: 1,
+  warpStrength: 1,
+  mouseInfluence: 1,
+  parallax: 0.5,
   noise: 0.15,
-  bandWidth: 0.14,
-  intensity: 1.3,
   iterations: 1,
+  intensity: 1.3,
+  bandWidth: 0.14,
 })
 
 const host = ref<HTMLElement | null>(null)
-let renderer: Renderer | undefined
-let program: Program | undefined
-let mesh: Mesh | undefined
-let raf = 0
+let renderer: THREE.WebGLRenderer | undefined
+let scene: THREE.Scene | undefined
+let camera: THREE.OrthographicCamera | undefined
+let geometry: THREE.PlaneGeometry | undefined
+let material: THREE.ShaderMaterial | undefined
+let mesh: THREE.Mesh | undefined
 let resizeObserver: ResizeObserver | undefined
+let animationFrame = 0
+let clock: THREE.Clock | undefined
+const pointerTarget = new THREE.Vector2(0, 0)
+const pointerCurrent = new THREE.Vector2(0, 0)
 
-const vertex = `attribute vec2 uv; varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position,0.0,1.0);}`
-const fragment = `precision highp float; varying vec2 vUv; uniform vec2 uCanvas; uniform float uTime,uSpeed,uFrequency,uNoise,uBandWidth,uIntensity; uniform vec2 uRot,uPointer; uniform vec3 uColor; void main(){float t=uTime*uSpeed; vec2 p=vUv*2.0-1.0; p+=uPointer*0.08; vec2 rp=vec2(p.x*uRot.x-p.y*uRot.y,p.x*uRot.y+p.y*uRot.x); vec2 q=vec2(rp.x*(uCanvas.x/uCanvas.y),rp.y); q/=0.5+0.2*dot(q,q); q+=0.2*cos(t)-7.56; vec2 r=sin(1.5*(q.yx*uFrequency)+2.0*cos(q*uFrequency)); float m=length(r+sin(5.0*r.y*uFrequency-3.0*t)/4.0); float w=1.0-exp(-uBandWidth/exp(uBandWidth*m)); vec3 col=uColor*w*uIntensity; float n=fract(sin(dot(gl_FragCoord.xy+vec2(uTime),vec2(12.9898,78.233)))*43758.5453); col+=((n-0.5)*uNoise); gl_FragColor=vec4(clamp(col,0.0,1.0),1.0);}`
-
-function hexToRgb(hex: string): [number, number, number] {
-  const value = hex.replace('#', '')
+function toVector3(hex: string): THREE.Vector3 {
+  const value = hex.replace('#', '').trim()
   const normalized = value.length === 3 ? value.split('').map((char) => char + char).join('') : value
-  return [0, 2, 4].map((offset) => Number.parseInt(normalized.slice(offset, offset + 2), 16) / 255) as [number, number, number]
+  return new THREE.Vector3(
+    Number.parseInt(normalized.slice(0, 2), 16) / 255,
+    Number.parseInt(normalized.slice(2, 4), 16) / 255,
+    Number.parseInt(normalized.slice(4, 6), 16) / 255,
+  )
 }
 
-function render(): void {
-  if (!renderer || !program || !mesh) return
-  program.uniforms.uTime.value += 0.016
-  renderer.render({ scene: mesh })
-  raf = requestAnimationFrame(render)
+function colorVectors(): THREE.Vector3[] {
+  return Array.from({ length: 8 }, (_, index) => toVector3(props.colors[index] ?? '#000000'))
+}
+
+function syncUniforms(): void {
+  if (!material) return
+  const uniforms = material.uniforms
+  uniforms.uSpeed.value = props.speed
+  uniforms.uRot.value.set(Math.cos(props.rotation * Math.PI / 180), Math.sin(props.rotation * Math.PI / 180))
+  uniforms.uColorCount.value = Math.min(props.colors.length, 8)
+  props.colors.slice(0, 8).forEach((color, index) => uniforms.uColors.value[index].copy(toVector3(color)))
+  uniforms.uTransparent.value = props.transparent ? 1 : 0
+  uniforms.uScale.value = props.scale
+  uniforms.uFrequency.value = props.frequency
+  uniforms.uWarpStrength.value = props.warpStrength
+  uniforms.uMouseInfluence.value = props.mouseInfluence
+  uniforms.uParallax.value = props.parallax
+  uniforms.uNoise.value = props.noise
+  uniforms.uIterations.value = props.iterations
+  uniforms.uIntensity.value = props.intensity
+  uniforms.uBandWidth.value = props.bandWidth
+  if (renderer) renderer.setClearColor(0x000000, props.transparent ? 0 : 1)
 }
 
 function resize(): void {
-  if (!renderer || !program || !host.value) return
-  const width = Math.max(host.value.clientWidth, 1)
-  const height = Math.max(host.value.clientHeight, 1)
-  renderer.setSize(width, height)
-  program.uniforms.uCanvas.value = [width, height]
+  if (!host.value || !renderer || !material) return
+  const width = host.value.clientWidth || 1
+  const height = host.value.clientHeight || 1
+  renderer.setSize(width, height, false)
+  material.uniforms.uCanvas.value.set(width, height)
+}
+
+function handlePointerMove(event: PointerEvent): void {
+  if (!host.value) return
+  const rect = host.value.getBoundingClientRect()
+  pointerTarget.set(
+    ((event.clientX - rect.left) / (rect.width || 1)) * 2 - 1,
+    -(((event.clientY - rect.top) / (rect.height || 1)) * 2 - 1),
+  )
+}
+
+function render(): void {
+  if (!renderer || !scene || !camera || !material) return
+  try {
+    const delta = clock?.getDelta() ?? 0
+    const elapsed = clock?.elapsedTime ?? 0
+    material.uniforms.uTime.value = elapsed
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    const degrees = (props.rotation % 360) + (reducedMotion ? 0 : props.autoRotate * elapsed)
+    const radians = degrees * Math.PI / 180
+    material.uniforms.uRot.value.set(Math.cos(radians), Math.sin(radians))
+    pointerCurrent.lerp(pointerTarget, reducedMotion ? 1 : Math.min(1, delta * 8))
+    material.uniforms.uPointer.value.copy(pointerCurrent)
+    renderer.render(scene, camera)
+    if (!reducedMotion) animationFrame = requestAnimationFrame(render)
+  } catch (error) {
+    console.error('[ColorBends] WebGL animation disabled.', error)
+  }
 }
 
 onMounted(() => {
-  if (!host.value || typeof WebGLRenderingContext === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  if (!host.value) return
   try {
-    renderer = new Renderer({ alpha: true, antialias: false, dpr: Math.min(window.devicePixelRatio || 1, 2) })
-    const gl = renderer.gl
-    host.value.appendChild(gl.canvas)
-    gl.canvas.style.width = '100%'
-    gl.canvas.style.height = '100%'
-    gl.canvas.style.display = 'block'
-    program = new Program(gl, {
-      vertex,
-      fragment,
+    scene = new THREE.Scene()
+    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+    geometry = new THREE.PlaneGeometry(2, 2)
+    material = new THREE.ShaderMaterial({
+      vertexShader: colorBendsVertex,
+      fragmentShader: colorBendsFragment,
       uniforms: {
-        uCanvas: { value: [1, 1] },
+        uCanvas: { value: new THREE.Vector2(1, 1) },
         uTime: { value: 0 },
         uSpeed: { value: props.speed },
+        uRot: { value: new THREE.Vector2(1, 0) },
+        uColorCount: { value: Math.min(props.colors.length, 8) },
+        uColors: { value: colorVectors() },
+        uTransparent: { value: props.transparent ? 1 : 0 },
+        uScale: { value: props.scale },
         uFrequency: { value: props.frequency },
+        uWarpStrength: { value: props.warpStrength },
+        uPointer: { value: new THREE.Vector2(0, 0) },
+        uMouseInfluence: { value: props.mouseInfluence },
+        uParallax: { value: props.parallax },
         uNoise: { value: props.noise },
-        uBandWidth: { value: props.bandWidth },
+        uIterations: { value: props.iterations },
         uIntensity: { value: props.intensity },
-        uRot: { value: [Math.cos(props.rotation * Math.PI / 180), Math.sin(props.rotation * Math.PI / 180)] },
-        uPointer: { value: [0, 0] },
-        uColor: { value: hexToRgb(props.colors[0] ?? '#32F08C') },
+        uBandWidth: { value: props.bandWidth },
       },
+      premultipliedAlpha: true,
+      transparent: true,
     })
-    mesh = new Mesh(gl, { geometry: new Triangle(gl), program })
+    mesh = new THREE.Mesh(geometry, material)
+    scene.add(mesh)
+    renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', alpha: true })
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    renderer.setClearColor(0x000000, props.transparent ? 0 : 1)
+    renderer.domElement.style.width = '100%'
+    renderer.domElement.style.height = '100%'
+    renderer.domElement.style.display = 'block'
+    host.value.appendChild(renderer.domElement)
+    clock = new THREE.Clock()
     resize()
-    resizeObserver = new ResizeObserver(resize)
-    resizeObserver.observe(host.value)
-    raf = requestAnimationFrame(render)
-  } catch {
-    renderer = undefined
-    program = undefined
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(resize)
+      resizeObserver.observe(host.value)
+    } else {
+      window.addEventListener('resize', resize)
+    }
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    animationFrame = requestAnimationFrame(render)
+  } catch (error) {
+    console.error('[ColorBends] Three.js WebGL initialization failed; effect disabled.', error)
   }
 })
 
-watch(() => props.colors, (colors) => {
-  if (program) program.uniforms.uColor.value = hexToRgb(colors[0] ?? '#32F08C')
-}, { deep: true })
+watch(() => [props.colors, props.rotation, props.autoRotate, props.speed, props.transparent, props.scale, props.frequency, props.warpStrength, props.mouseInfluence, props.parallax, props.noise, props.iterations, props.intensity, props.bandWidth], syncUniforms, { deep: true })
 
 onBeforeUnmount(() => {
-  cancelAnimationFrame(raf)
+  cancelAnimationFrame(animationFrame)
   resizeObserver?.disconnect()
-  renderer?.gl.canvas.remove()
-  renderer?.gl.getExtension('WEBGL_lose_context')?.loseContext()
-  renderer = undefined
-  program = undefined
+  window.removeEventListener('resize', resize)
+  window.removeEventListener('pointermove', handlePointerMove)
+  geometry?.dispose()
+  material?.dispose()
+  renderer?.dispose()
+  renderer?.forceContextLoss()
+  renderer?.domElement.remove()
+  scene = undefined
+  camera = undefined
+  geometry = undefined
+  material = undefined
   mesh = undefined
+  renderer = undefined
+  clock = undefined
 })
 </script>
 
 <template>
-  <div ref="host" data-testid="color-bends" class="color-bends" :data-colors="colors.join(',')" :data-rotation="rotation">
-    <div class="color-bends__fallback" aria-hidden="true"></div>
-  </div>
+  <div ref="host" data-testid="color-bends" class="color-bends" :data-colors="colors.join(',')" :data-rotation="rotation"></div>
 </template>
 
 <style scoped>
-.color-bends { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.color-bends__fallback { position: absolute; inset: -25%; background: radial-gradient(ellipse at 30% 30%, rgba(50, 240, 140, .92), transparent 34%), radial-gradient(ellipse at 78% 55%, rgba(11, 104, 58, .82), transparent 38%), linear-gradient(120deg, #06180c, #0e4f2c 48%, #03120a); filter: saturate(125%); animation: color-bends-flow 14s ease-in-out infinite alternate; }
-@keyframes color-bends-flow { from { transform: translate3d(-3%, -2%, 0) rotate(-3deg) scale(1); } to { transform: translate3d(3%, 2%, 0) rotate(4deg) scale(1.08); } }
-@media (prefers-reduced-motion: reduce) { .color-bends__fallback { animation: none; } }
+.color-bends { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.color-bends canvas { position: relative; z-index: 1; }
 </style>

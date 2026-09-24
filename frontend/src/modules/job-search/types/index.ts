@@ -47,6 +47,8 @@ export interface JobPost {
   updatedAt: string
 }
 
+export type JobContextMode = 'detail' | 'greeting' | 'tailored'
+
 export interface JobPostCreateInput {
   companyName: string
   jobTitle: string

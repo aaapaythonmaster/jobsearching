@@ -22,12 +22,14 @@ const editForm = reactive({
   contentText: '',
   notes: '',
 })
+const uploadError = ref<string | null>(null)
 
 onMounted(() => store.fetchResumes())
 
 function onFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   selectedFile.value = input.files?.[0] ?? null
+  uploadError.value = null
 }
 
 async function search() {
@@ -39,16 +41,28 @@ async function search() {
 
 async function upload() {
   if (!selectedFile.value) return
-  await store.uploadResume({
-    file: selectedFile.value,
-    name: uploadForm.name.trim() || undefined,
-    targetRole: uploadForm.targetRole.trim() || undefined,
-    notes: uploadForm.notes.trim() || undefined,
-  })
-  selectedFile.value = null
-  uploadForm.name = ''
-  uploadForm.targetRole = ''
-  uploadForm.notes = ''
+  uploadError.value = null
+  try {
+    await store.uploadResume({
+      file: selectedFile.value,
+      name: uploadForm.name.trim() || undefined,
+      targetRole: uploadForm.targetRole.trim() || undefined,
+      notes: uploadForm.notes.trim() || undefined,
+    })
+    selectedFile.value = null
+    uploadForm.name = ''
+    uploadForm.targetRole = ''
+    uploadForm.notes = ''
+  } catch (error) {
+    uploadError.value = friendlyError(error)
+  }
+}
+
+function friendlyError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  if (/failed to fetch|network|网络|连接/i.test(message)) return '后端服务暂时不可用，请确认后端已启动后重试。'
+  if (/extract|parse|解析/i.test(message)) return '简历解析失败，请确认文件是有效的 PDF 或 DOCX。'
+  return `上传失败：${message || '未知错误'}`
 }
 
 function startEdit(resume: Resume) {
@@ -90,14 +104,16 @@ async function removeResume(id: string) {
       <aside class="resume-page__list" aria-label="简历列表">
       <form class="panel resume-upload" @submit.prevent="upload">
         <h3>上传简历</h3>
-        <label class="resume-upload__trigger" aria-label="上传简历" title="选择简历文件">
-          <input type="file" accept=".pdf,.docx,application/pdf" @change="onFileChange" />
+        <p v-if="uploadError" class="resume-upload__error">{{ uploadError }}</p>
+        <input id="resume-file-input" class="resume-upload__input" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" @change="onFileChange" />
+        <label class="resume-upload__trigger" for="resume-file-input" aria-label="上传简历" title="选择简历文件">
           <svg class="resume-upload__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 16V4" />
             <path d="m7 9 5-5 5 5" />
             <path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
           </svg>
         </label>
+        <p v-if="selectedFile" class="resume-upload__selected-file">已选择：{{ selectedFile.name }}</p>
         <label>名称<BaseInput v-model="uploadForm.name" placeholder="默认使用文件名" /></label>
         <label>目标方向<BaseInput v-model="uploadForm.targetRole" placeholder="例如 AI产品经理" /></label>
         <label>备注<textarea v-model="uploadForm.notes" rows="3" /></label>
@@ -139,7 +155,7 @@ async function removeResume(id: string) {
             </div>
             <label>修正后的简历正文<textarea v-model="editForm.contentText" rows="16" /></label>
             <label>备注<textarea v-model="editForm.notes" rows="3" /></label>
-            <div class="resume-page__actions">
+            <div class="resume-page__actions resume-page__actions--spaced">
               <BaseButton type="submit" :loading="store.loading">保存修改</BaseButton>
               <BaseButton type="button" variant="ghost" @click="editing = null">取消</BaseButton>
             </div>
@@ -226,6 +242,7 @@ async function removeResume(id: string) {
   &__actions {
     display: flex;
     gap: @space-md;
+    margin-top: @space-md;
   }
 }
 
@@ -259,7 +276,16 @@ textarea {
   font: inherit;
 }
 
+.resume-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .resume-upload__trigger {
+  width: 100%;
   min-height: 88px;
   display: flex;
   align-items: center;
@@ -284,13 +310,15 @@ textarea {
     outline-offset: 3px;
   }
 
-  input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-  }
+}
+
+.resume-upload__selected-file {
+  overflow: hidden;
+  margin: -@space-xs 0 0;
+  color: @color-text-secondary;
+  font-size: @font-size-sm;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .resume-upload__icon {
@@ -329,6 +357,8 @@ textarea {
     display: flex;
     align-items: center;
     gap: @space-sm;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 }
 

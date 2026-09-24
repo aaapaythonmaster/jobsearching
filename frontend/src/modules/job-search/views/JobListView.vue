@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import BaseButton from '@/components/BaseButton/index.vue'
 import BaseEmpty from '@/components/BaseEmpty/index.vue'
 import BaseInput from '@/components/BaseInput/index.vue'
@@ -12,9 +12,9 @@ import { useJobSearchStore } from '../store'
 import type { JobPostCreateInput, RejectedJobImage } from '../types'
 
 const store = useJobSearchStore()
-const router = useRouter()
+const route = useRoute()
 const keyword = ref('')
-const statusId = ref('')
+const statusId = ref(typeof route.query.statusId === 'string' ? route.query.statusId : '')
 const jobDirection = ref('')
 const uploadError = ref<string | null>(null)
 
@@ -30,6 +30,9 @@ const statusName = computed(() => {
 
 onMounted(async () => {
   await Promise.all([store.fetchStatuses(), store.fetchJobs()])
+  if (!store.contextJob && store.jobs[0]) {
+    store.openJobContext(store.jobs[0], 'detail')
+  }
 })
 
 function clean(input: JobPostCreateInput): JobPostCreateInput {
@@ -87,9 +90,6 @@ async function removeJob(id: string) {
   await store.removeJob(id)
 }
 
-function scrollToCreate(): void {
-  document.querySelector<HTMLElement>('.job-create')?.scrollIntoView({ behavior: 'smooth' })
-}
 </script>
 
 <template>
@@ -99,7 +99,6 @@ function scrollToCreate(): void {
         <h2>岗位 JD</h2>
         <p>批量识别岗位截图，逐条检查后保存并记录进展。</p>
       </div>
-      <BaseButton class="job-page__add" size="sm" @click="scrollToCreate"> 新增岗位 </BaseButton>
     </header>
 
     <section class="panel job-create" aria-labelledby="job-create-title">
@@ -156,13 +155,14 @@ function scrollToCreate(): void {
             <p>{{ statusName(job.statusId) }} · {{ job.salaryRange || '薪资未填' }}</p>
           </div>
           <div class="job-card__actions">
-            <BaseButton
-              size="sm"
-              @click="router.push({ name: 'job-search-job-detail', params: { id: job.id } })"
-            >
-              查看
+            <BaseButton size="sm" @click="store.openJobContext(job, 'greeting')">打招呼</BaseButton>
+            <BaseButton size="sm" @click="store.openJobContext(job, 'tailored')">简历调整</BaseButton>
+            <BaseButton size="sm" variant="ghost" class="job-card__icon-action" aria-label="编辑岗位" title="编辑岗位" @click="store.openJobContext(job, 'detail')">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m15 5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">编辑</span>
             </BaseButton>
-            <BaseButton size="sm" variant="danger" @click="removeJob(job.id)">删除</BaseButton>
+            <BaseButton size="sm" variant="ghost" class="job-card__icon-action" aria-label="删除岗位" title="删除岗位" @click="removeJob(job.id)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-9 0 1 13h10l1-13M10 11v5M14 11v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">删除</span>
+            </BaseButton>
           </div>
         </article>
       </div>
@@ -186,11 +186,7 @@ function scrollToCreate(): void {
     align-items: flex-end;
     justify-content: space-between;
     gap: @space-lg;
-  }
-
-  &__add {
-    flex: 0 0 auto;
-    white-space: nowrap;
+    margin-top: -1px;
   }
 
   &__header p {
@@ -218,7 +214,8 @@ function scrollToCreate(): void {
 .job-create {
   display: flex;
   flex-direction: column;
-  gap: @space-lg;
+  gap: @space-md;
+  margin-top: -2px;
 
   &__header p {
     margin-top: @space-xs;
@@ -279,7 +276,27 @@ select {
     display: flex;
     align-items: center;
     gap: @space-sm;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
+
+  &__icon-action {
+    min-width: 36px;
+    padding-inline: 8px;
+    svg { width: 18px; height: 18px; }
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .state {

@@ -6,6 +6,7 @@
   border: 1px solid transparent;
   border-radius: 8px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
   transition: background-color @transition-fast, border-color @transition-fast,
     color @transition-fast, transform @transition-fast, box-shadow @transition-fast;
@@ -55,10 +56,12 @@
     }
   }
   &--danger {
-    background-color: @color-danger;
-    color: @color-text-inverse;
+    background-color: @color-bg-muted;
+    color: @color-text;
+    border-color: @color-border;
     &:hover:not(:disabled) {
-      filter: brightness(0.95);
+      background-color: darken(@color-bg-muted, 4%);
+      border-color: @color-border-strong;
     }
   }
   &--ghost {

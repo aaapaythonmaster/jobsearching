@@ -28,16 +28,18 @@ describe('ResumeListView upload entry', () => {
         },
       },
     })
-    const input = wrapper.get('.resume-upload__trigger input[type="file"]')
+    const input = wrapper.get('.resume-upload__input[type="file"]')
     const file = new File(['resume'], 'resume.pdf', { type: 'application/pdf' })
     Object.defineProperty(input.element, 'files', { value: [file] })
 
     expect(wrapper.get('.resume-upload h3').text()).toBe('上传简历')
-    expect(wrapper.get('.resume-upload__trigger').text()).toBe('')
-    expect(wrapper.get('.resume-upload__trigger').attributes('aria-label')).toBe('上传简历')
+    expect(wrapper.get('label.resume-upload__trigger').text()).toBe('')
+    expect(wrapper.get('label.resume-upload__trigger').attributes('for')).toBe('resume-file-input')
+    expect(wrapper.get('label.resume-upload__trigger').attributes('aria-label')).toBe('上传简历')
     expect(wrapper.find('.resume-upload__icon').exists()).toBe(true)
 
     await input.trigger('change')
+    expect(wrapper.get('.resume-upload__selected-file').text()).toContain('resume.pdf')
     expect(uploadResume).not.toHaveBeenCalled()
     await wrapper.get('.resume-upload').trigger('submit')
     expect(uploadResume).toHaveBeenCalledWith({
@@ -61,4 +63,24 @@ describe('ResumeListView upload entry', () => {
     expect(wrapper.find('[aria-label="简历列表"]').exists()).toBe(true)
     expect(wrapper.get('[aria-label="简历编辑"]').text()).toContain('选择一份简历')
   })
+
+  it('keeps upload errors visible to explain a failed upload', async () => {
+    uploadResume.mockRejectedValueOnce(new Error('文件解析失败'))
+    const wrapper = mount(ResumeListView, {
+      global: {
+        stubs: {
+          BaseButton: { template: '<button><slot /></button>' },
+          BaseEmpty: { template: '<div />' },
+          BaseInput: { template: '<input />' },
+        },
+      },
+    })
+    const input = wrapper.get('.resume-upload__input[type="file"]')
+    const file = new File(['resume'], 'resume.pdf', { type: 'application/pdf' })
+    Object.defineProperty(input.element, 'files', { value: [file] })
+    await input.trigger('change')
+    await wrapper.get('.resume-upload').trigger('submit')
+    expect(wrapper.get('.resume-upload__error').text()).toContain('简历解析失败')
+  })
+
 })

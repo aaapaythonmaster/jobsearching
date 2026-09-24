@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { JobImageTask, JobPostCreateInput } from '../types'
 import { createEmptyJobDraft } from '../composables/useJobImageQueue'
@@ -15,6 +16,11 @@ const readyTask = (draft: JobPostCreateInput): JobImageTask => ({
 })
 
 describe('JobDraftReview', () => {
+  it('keeps the review form compact enough to expose its actions', () => {
+    const source = readFileSync('src/modules/job-search/components/JobDraftReview.vue', 'utf8')
+    expect(source).toContain('gap: @space-sm;')
+  })
+
   it('blocks save and shows required fields when the active draft is incomplete', async () => {
     const wrapper = mount(JobDraftReview, {
       props: { task: readyTask(createEmptyJobDraft()), statuses: [] },
@@ -42,6 +48,15 @@ describe('JobDraftReview', () => {
       companyName: 'A 公司',
       jobTitle: '产品经理',
     })
+  })
+
+  it('keeps the long text fields compact in the default review state', () => {
+    const wrapper = mount(JobDraftReview, {
+      props: { task: readyTask({ ...createEmptyJobDraft(), jdText: 'JD' }), statuses: [] },
+    })
+    const textareas = wrapper.findAll('textarea')
+    expect(textareas[0].attributes('rows')).toBe('7')
+    expect(textareas[1].attributes('rows')).toBe('2')
   })
 
   it('emits draft edits without saving', async () => {

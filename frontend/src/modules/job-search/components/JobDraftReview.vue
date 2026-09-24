@@ -130,11 +130,11 @@ function submit() {
       </div>
       <label>
         JD 原文
-        <textarea v-model="draft.jdText" rows="10" :disabled="task.status === 'saving'" />
+        <textarea v-model="draft.jdText" rows="7" :disabled="task.status === 'saving'" />
       </label>
       <label>
         备注
-        <textarea v-model="draft.notes" rows="3" :disabled="task.status === 'saving'" />
+        <textarea v-model="draft.notes" rows="2" :disabled="task.status === 'saving'" />
       </label>
 
       <p v-if="validationError" class="draft-review__error">{{ validationError }}</p>
@@ -212,7 +212,7 @@ function submit() {
   &__form {
     display: flex;
     flex-direction: column;
-    gap: @space-md;
+    gap: @space-sm;
 
     header span {
       color: @color-text-secondary;

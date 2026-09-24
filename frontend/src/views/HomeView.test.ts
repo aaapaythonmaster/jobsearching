@@ -35,20 +35,16 @@ describe('HomeView', () => {
   it('shows only the new split copy and the two layered backgrounds', async () => {
     const { wrapper } = await mountHome()
     expect(wrapper.text()).toContain('Job is on its way')
-    expect(wrapper.text()).toContain('Mom, life is an open wilderness')
+    expect(wrapper.text()).not.toContain('Mom, life is an open wilderness')
+    expect(wrapper.findAll('.home-view__line--calligraphy')).toHaveLength(1)
     expect(wrapper.text()).not.toContain('把每一次求职推进')
     expect(wrapper.find('.color-bends-stub').exists()).toBe(true)
     expect(wrapper.find('.dot-field-stub').exists()).toBe(true)
     expect(wrapper.find('button').exists()).toBe(false)
   })
 
-  it('emits workspace entry when the whole preview is clicked', async () => {
-    const { wrapper, router } = await mountHome()
-    const preview = wrapper.get('.home-view__workspace-preview')
-    expect(preview.attributes('role')).toBe('button')
-    expect(preview.attributes('tabindex')).toBe('0')
-    await preview.trigger('click')
-    expect(wrapper.emitted('start')).toHaveLength(1)
-    expect(router.currentRoute.value.name).toBe('home')
+  it('does not render the removed workspace preview component', async () => {
+    const { wrapper } = await mountHome()
+    expect(wrapper.find('.home-view__workspace-preview').exists()).toBe(false)
   })
 })

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { BadRequestError, ConflictError, NotFoundError } from '@/utils/http-error'
 import { nanoid } from '@/utils/id'
-import { detectResumeFileType, extractResumeText } from './job-search.document'
+import { detectResumeFileType, extractResumeText, normalizeResumeText } from './job-search.document'
 import { extractTextFromImage, generateText } from './job-search.ai'
 import { extractTextWithMacVision } from './job-search.ocr'
 import { jobSearchRepository } from './job-search.repository'
@@ -54,14 +54,15 @@ export interface JobPostImageExtractInput {
  * them into HTTP responses.
  */
 export const jobSearchService = {
-  listResumes(query: ResumeListQuery): Promise<Resume[]> {
-    return jobSearchRepository.listResumes(query)
+  async listResumes(query: ResumeListQuery): Promise<Resume[]> {
+    const resumes = await jobSearchRepository.listResumes(query)
+    return resumes.map(normalizeResume)
   },
 
   async getResume(id: string): Promise<Resume> {
     const resume = await jobSearchRepository.findResumeById(id)
     if (!resume) throw NotFoundError('resume')
-    return resume
+    return normalizeResume(resume)
   },
 
   async uploadResume(input: ResumeUploadInput): Promise<Resume> {
@@ -98,7 +99,7 @@ export const jobSearchService = {
 
     const updated = await jobSearchRepository.updateResume(id, input, new Date().toISOString())
     if (!updated) throw NotFoundError('resume')
-    return updated
+    return normalizeResume(updated)
   },
 
   async removeResume(id: string): Promise<{ id: string }> {
@@ -375,6 +376,14 @@ export const jobSearchService = {
       createdAt: new Date().toISOString(),
     })
   },
+}
+
+function normalizeResume(resume: Resume): Resume {
+  return {
+    ...resume,
+    extractedText: normalizeResumeText(resume.extractedText),
+    contentText: normalizeResumeText(resume.contentText),
+  }
 }
 
 function stripExtension(filename: string): string {

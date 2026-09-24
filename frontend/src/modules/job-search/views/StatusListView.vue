@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import BaseButton from '@/components/BaseButton/index.vue'
 import BaseEmpty from '@/components/BaseEmpty/index.vue'
 import BaseInput from '@/components/BaseInput/index.vue'
@@ -9,24 +9,39 @@ import type { ApplicationStatus } from '../types'
 const store = useJobSearchStore()
 const form = reactive({
   name: '',
-  color: '#2563eb',
+  color: '#29ef87',
   sortOrder: 0,
 })
 const editingId = ref<string | null>(null)
+const statusCounts = computed(() => {
+  const counts = new Map<string, number>()
+  for (const job of store.jobs) {
+    if (job.statusId) counts.set(job.statusId, (counts.get(job.statusId) ?? 0) + 1)
+  }
+  return counts
+})
+const colorPresets = [
+  '#e7fdf2',
+  '#b8fad7',
+  '#88f6bc',
+  '#29ef87',
+  '#09773d',
+]
+const colorValues = new Set(colorPresets)
 
-onMounted(() => store.fetchStatuses())
+onMounted(() => Promise.all([store.fetchStatuses(), store.fetchJobs()]))
 
 function edit(status: ApplicationStatus) {
   editingId.value = status.id
   form.name = status.name
-  form.color = status.color || '#2563eb'
+  form.color = status.color && colorValues.has(status.color) ? status.color : '#29ef87'
   form.sortOrder = status.sortOrder
 }
 
 function reset() {
   editingId.value = null
   form.name = ''
-  form.color = '#2563eb'
+  form.color = '#29ef87'
   form.sortOrder = 0
 }
 
@@ -56,19 +71,50 @@ async function remove(id: string) {
     </header>
 
     <div class="status-page__grid">
-      <form class="panel" @submit.prevent="save">
-        <h3>{{ editingId ? '编辑状态' : '新增状态' }}</h3>
-        <label>名称<BaseInput v-model="form.name" placeholder="例如 已打招呼" /></label>
-        <label>
-          颜色
-          <input v-model="form.color" type="color" />
-        </label>
-        <label>排序<BaseInput v-model="form.sortOrder" type="number" /></label>
-        <div class="status-page__actions">
-          <BaseButton type="submit" :loading="store.loading">保存</BaseButton>
-          <BaseButton v-if="editingId" variant="ghost" @click="reset">取消</BaseButton>
-        </div>
-      </form>
+      <div class="status-page__sidebar">
+        <section class="panel status-page__summary" aria-label="求职状态分析">
+          <h3>求职状态分析</h3>
+          <RouterLink
+            v-for="status in store.statuses"
+            :key="status.id"
+            :to="{ path: '/job-search/jobs', query: { statusId: status.id } }"
+            class="status-summary-card"
+          >
+            <span>{{ status.name }}</span>
+            <strong>{{ statusCounts.get(status.id) ?? 0 }} 家</strong>
+          </RouterLink>
+        </section>
+
+        <form class="panel" @submit.prevent="save">
+          <h3>{{ editingId ? '编辑状态' : '新增状态' }}</h3>
+          <label>名称<BaseInput v-model="form.name" placeholder="例如 已打招呼" /></label>
+          <label>
+            颜色
+            <span class="color-swatches" role="radiogroup" aria-label="状态颜色">
+              <button
+                v-for="color in colorPresets"
+                :key="color"
+                type="button"
+                class="color-swatch"
+                :class="{ 'color-swatch--selected': form.color === color, 'color-swatch--dark': color === '#09773d' }"
+                :style="{ backgroundColor: color }"
+                :data-color-value="color"
+                :aria-label="color"
+                role="radio"
+                :aria-checked="form.color === color"
+                @click="form.color = color"
+              >
+                <svg v-if="form.color === color" class="color-swatch__check" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 12.5 3.4 3.4 7.6-7.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </span>
+          </label>
+          <label>排序<BaseInput v-model="form.sortOrder" type="number" /></label>
+          <div class="status-page__actions">
+            <BaseButton type="submit" :loading="store.loading">保存</BaseButton>
+            <BaseButton v-if="editingId" variant="ghost" @click="reset">取消</BaseButton>
+          </div>
+        </form>
+      </div>
 
       <div class="panel">
         <div v-if="store.error" class="state state--error">{{ store.error }}</div>
@@ -82,7 +128,7 @@ async function remove(id: string) {
             :data-status-name="status.name"
           >
             <div class="status-card__main">
-              <span class="status-card__swatch" :style="{ backgroundColor: status.color || '#94a3b8' }" />
+              <span class="status-card__swatch" :style="{ backgroundColor: status.color && colorValues.has(status.color) ? status.color : '#29ef87' }" />
               <div>
                 <h3>{{ status.name }}</h3>
                 <p>排序 {{ status.sortOrder }}</p>
@@ -120,10 +166,31 @@ async function remove(id: string) {
     gap: @space-lg;
   }
 
+  &__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: @space-lg;
+  }
+
   &__actions {
     display: flex;
     gap: @space-md;
   }
+}
+
+.status-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: @space-md;
+  border: 1px solid @color-border;
+  border-radius: @radius-md;
+  padding: @space-md;
+  color: @color-text;
+  background: @color-bg;
+  text-align: left;
+  &:hover { border-color: @color-primary; background: fade(@color-primary, 6%); }
+  strong { color: @color-primary; }
 }
 
 .panel {
@@ -146,12 +213,48 @@ async function remove(id: string) {
   }
 }
 
-input[type='color'] {
-  width: 64px;
-  height: 36px;
-  border: 1px solid @color-border-strong;
-  border-radius: @radius-md;
-  background: @color-bg;
+.color-swatches {
+  display: flex;
+  align-items: center;
+  gap: @space-sm;
+  min-height: 36px;
+}
+
+.color-swatch {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px fade(@color-text, 18%);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: scale(1.08);
+  }
+
+  &--selected {
+    border-color: transparent;
+    box-shadow: none;
+    transform: scale(1.06);
+  }
+
+  &--dark {
+    .color-swatch__check {
+      color: #fff;
+    }
+  }
+}
+
+.color-swatch__check {
+  width: 18px;
+  height: 18px;
+  color: #092115;
+  pointer-events: none;
 }
 
 .status-list {
