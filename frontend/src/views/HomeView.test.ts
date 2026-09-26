@@ -34,13 +34,15 @@ async function mountHome() {
 describe('HomeView', () => {
   it('shows only the new split copy and the two layered backgrounds', async () => {
     const { wrapper } = await mountHome()
-    expect(wrapper.text()).toContain('Job is on its way')
+    expect(wrapper.text()).toContain('把下一份工作，')
+    expect(wrapper.text()).toContain('准备得更具体。')
     expect(wrapper.text()).not.toContain('Mom, life is an open wilderness')
     expect(wrapper.findAll('.home-view__line--calligraphy')).toHaveLength(1)
     expect(wrapper.text()).not.toContain('把每一次求职推进')
     expect(wrapper.find('.color-bends-stub').exists()).toBe(true)
     expect(wrapper.find('.dot-field-stub').exists()).toBe(true)
     expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.findAll('a')).toHaveLength(5)
   })
 
   it('does not render the removed workspace preview component', async () => {

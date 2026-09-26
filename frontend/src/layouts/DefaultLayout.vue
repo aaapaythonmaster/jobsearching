@@ -109,7 +109,7 @@ const contextPanelCopy = computed(() => ({
   &__home-nav { position: absolute; z-index: 4; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 28px; min-height: 64px; padding: 0 32px; color: #f7fff9; }
   &__home-brand { display: inline-flex; align-items: center; gap: 9px; color: inherit; font-size: 15px; font-weight: 700; letter-spacing: .04em; }
   &__home-logo { width: 32px; height: 32px; flex: 0 0 32px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(255, 232, 172, .42)); }
-  &__home-links { position: absolute; left: 50%; display: flex; align-items: center; gap: 22px; transform: translateX(-50%); a { color: fade(#f7fff9, 78%); font-size: 15px; &:hover { color: #fff; } } }
+  &__home-links { position: absolute; left: 50%; display: flex; align-items: center; gap: 26px; transform: translateX(-50%); a { position: relative; color: fade(#f7fff9, 70%); font-size: 13px; letter-spacing: .04em; transition: color .2s ease; &::after { content: ''; position: absolute; right: 0; bottom: -8px; left: 0; height: 1px; background: @color-action; transform: scaleX(0); transform-origin: right; transition: transform .2s ease; } &:hover { color: #fff; &::after { transform: scaleX(1); transform-origin: left; } } } }
   &__profile { width: 32px; height: 32px; margin-left: auto; border: 1px solid fade(#fff, 45%); border-radius: 50%; color: #0a0b0d; background: @color-action; font: inherit; font-weight: 700; cursor: pointer; }
   &__workspace { display: grid; grid-template-columns: 185px minmax(0, 1fr) 375px; height: 100%; min-height: 0; overflow: hidden; background: @color-workspace-canvas; }
   &__sidebar, &__main-column, &__context-column { min-width: 0; min-height: 0; }
